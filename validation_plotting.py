@@ -4,7 +4,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 from stompy.utils import model_skill
-import analysis as an
+import pyscripts.analysis as an
 from stompy.spatial import proj_utils
 import os
 
