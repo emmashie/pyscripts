@@ -82,7 +82,7 @@ for i in range(len(llind)):
 		tmax = mdtime[-1]
 	if  tmin < tmax:
 		### create directory for figures ###
-		path = "validation_plots/adcp_validation_plots/" + dir
+		path = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/validation_plots/adcp_validation_plots/" + dir
 		if not os.path.exists(path):
 			os.makedirs(path)
 		ts = path + "/time_series"
