@@ -19,7 +19,7 @@ def detrend(x=0, y=0):
     return y_new
 
 def band_avg(x=0, y=0, m=5, dt=1, window='Blackman'):
-    """ x, y, m (number of subrecords), window='Blackman' or 'None'
+    """ x, y, m (number of subrecords), dt, window='Blackman' or 'None'
     """
     N = len(x)
     y_new = detrend(x, y)   
@@ -39,6 +39,9 @@ def band_avg(x=0, y=0, m=5, dt=1, window='Blackman'):
     return freqs, spectra_avg
 
 def model_metrics(mod, obs):
+	""" calculate model metrics 
+	    mod and obs must be at same time and equivalent length
+	"""
 	ms = model_skill(mod, obs)
 	bias = np.mean(mod, obs)
 	r2 = np.corrcoef(mod, obs)[0,1]**2
