@@ -4,7 +4,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 from stompy.utils import model_skill
-import analysis as an
+import pyscripts.analysis as an
 
 model_files = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/r14_0000_201*.nc"
 adcp_file = "/opt/data/noaa/ports/SFB1312-2013.nc"
