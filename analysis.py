@@ -45,5 +45,5 @@ def model_metrics(mod, obs):
 	ms = model_skill(mod, obs)
 	bias = np.mean(mod-obs)
 	r2 = np.corrcoef(mod, obs)[0,1]**2
-	rms = np.mean(np.sqrt(mod - obs)**2)
+	rms = np.mean(np.sqrt((mod - obs)**2))
 	return ms, bias, r2, rms
