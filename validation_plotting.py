@@ -26,8 +26,12 @@ adcp_files = ["SFB1201-2012.nc", "SFB1202-2012.nc", "SFB1203-2012.nc", "SFB1204-
 				"SFB1324-2013.nc", "SFB1325-2013.nc", "SFB1326-2013.nc", "SFB1327-2013.nc",
 				"SFB1328-2013.nc", "SFB1329-2013.nc", "SFB1330-2013.nc", "SFB1331-2013.nc",
 				"SFB1332-2013.nc"]
-				
-model_files = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/r14_0000_201*.nc"
+
+
+#output_path = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/"			
+#model_files = output_path + "r14_0000_201*.nc"
+output_path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013/DFM_OUTPUT_wy2013/"	
+model_files = output_path + "wy2013_0000_20120801_000000_his.nc"
 mdat = nc.MFDataset(model_files)
 
 # pull out coordinates of model stations
@@ -82,7 +86,7 @@ for i in range(len(llind)):
 		tmax = mdtime[-1]
 	if  tmin < tmax:
 		### create directory for figures ###
-		path = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/validation_plots/adcp_validation_plots/" + dir
+		path = output_path + "validation_plots/adcp_validation_plots/" + dir
 		if not os.path.exists(path):
 			os.makedirs(path)
 		ts = path + "/time_series"
@@ -128,10 +132,12 @@ for i in range(len(llind)):
 		ax[1].set_ylabel("vbar spectral energy [$(m/s)^2/cph$]")
 		fig.savefig(spec + "/" + adcp_files[i][:-3] + "_spectra.png")
 		# plot scatter of model & observations
-		fig, ax = plt.subplots()
-		ax.scatter(mubar[:,llind[i]], mvbar[:,llind[i]], color='lightcoral')
-		ax.scatter(ubar, vbar, color='turquoise')
-		ax.legend(["model", "adcp"])
+		fig, ax = plt.subplots(figsize=(7,6))
+		ax.scatter(mubar[:,llind[i]], mvbar[:,llind[i]], s=0.5, alpha=0.5, color='lightcoral')
+		ax.scatter(ubar, vbar, s=0.5, alpha=0.5, color='turquoise')
+		lgnd = ax.legend(["model", "adcp"])
+		lgnd.legendHandles[0]._sizes = [5]
+		lgnd.legendHandles[1]._sizes = [5]
 		ax.set_xlabel("u")
 		ax.set_ylabel("v")
 		fig.savefig(scat + "/" + adcp_files[i][:-3] + "_scatter.png")
@@ -188,9 +194,11 @@ for i in range(len(llind)):
 			fig.savefig(spec + "/" + adcp_files[i][:-3] + "_" + str(-dep[k]) + "_spectra.png")
 			# plot scatter of model & observations
 			fig, ax = plt.subplots()
-			ax.scatter(mu_i[k,:], mv_i[k,:], color='lightcoral')
-			ax.scatter(u[k,:], v[k,:], color='turquoise')
-			ax.legend(["model", "adcp"])
+			ax.scatter(mu_i[k,:], mv_i[k,:], s=0.5, alpha=0.5, color='lightcoral')
+			ax.scatter(u[k,:], v[k,:], s=0.5, alpha=0.5, color='turquoise')
+			lgnd = ax.legend(["model", "adcp"])
+			lgnd.legendHandles[0]._sizes = [5]
+			lgnd.legendHandles[1]._sizes = [5]		
 			ax.set_xlabel("u")
 			ax.set_ylabel("v")
 			ax.set_title("Depth %f" %dep[k])

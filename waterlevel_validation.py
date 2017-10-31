@@ -9,7 +9,7 @@ import datetime as dt
 filename = "/home/emma/validation_data/NOAA_WaterLevel/NOAA_9414290.csv"
 hisfile = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/r14_0000*.nc"
 
-def load_NOAA(filename=filename, sep=',', header=0, usecols=0, time_format='%Y-%m-%dT%H:%M:%SZ'):
+def load_NOAA(filename=filename, sep=',', header=0, usecols=0, time_format='%Y-%m-%dT%H:%M:%SZ', tind=0, zind=1):
 	""" loads file (csv) of NOAA WaterLevel Data for a station
     and outputs time (list of datetime objects) and waterlevel 
 	
@@ -20,12 +20,12 @@ def load_NOAA(filename=filename, sep=',', header=0, usecols=0, time_format='%Y-%
 	"""
 	dat = pd.read_csv(filename, sep=sep, header=header, usecols=usecols)
 	time = []
-	for i in range(len(dat.values[:,0])):
-		time.append(dt.datetime.strptime(dat.values[i,0], time_format))
-	zeta = dat.values[:,1]
+	for i in range(len(dat.values[:,tind])):
+		time.append(dt.datetime.strptime(dat.values[i,tind], time_format))
+	zeta = dat.values[:,zind]
 	for i in range(len(time)):
 		time[i].replace(tzinfo=dt.timezone.utc)
-	return time, zeta.astype(float)
+	return dat.values[:,0], dat.values[:,1], time, zeta.astype(float)
 
 def load_model(hisfile=hisfile, rec=0, ref_year=2012, ref_month=8, ref_day=1): 
 	""" loads specific observation point record (rec) and 

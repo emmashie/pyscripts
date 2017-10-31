@@ -29,7 +29,10 @@ adcp_files = ["SFB1201-2012.nc", "SFB1202-2012.nc", "SFB1203-2012.nc", "SFB1204-
 	      "SFB1332-2013.nc"]
 
 # define model files and load netcdf files
-model_files = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/r14_0000_201*.nc"
+#output_path = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/"			
+#model_files = output_path + "r14_0000_201*.nc"
+output_path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013/DFM_OUTPUT_wy2013/"	
+model_files = output_path + "wy2013_0000_20120801_000000_his.nc"
 mdat = nc.MFDataset(model_files)
 
 # pull out utm coordinates of model stations
@@ -47,9 +50,11 @@ for i in range(len(llind)):
 	dir = str(adcp_files[i][:-3])
 	filename = dir + ".txt"
 	### create directory for text files ###
-	path = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/model_metrics/" + dir
+	path = output_path + "model_metrics/" 
+	if not os.path.exists(path):
+		os.makedirs(path)
 	# open file to write to 
-	f = open(path, "w")
+	f = open(path + dir, "w")
 	# write header line
 	f.write("filename, depth, skill [u], skill [v], bias [u], bias [v], r2 [u], r2 [v], rms [u], rms [v]\n")
 	dat = nc.Dataset("/opt/data/noaa/ports/" + adcp_files[i])
