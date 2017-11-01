@@ -11,8 +11,8 @@ from stompy.io.local import noaa_coops
 
 
 #hisfile = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/r14_0000*.nc"
-path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013/DFM_OUTPUT_wy2013/"
-hisfile = path + "wy2013_0000_20120801_000000_his.nc"
+path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013a/DFM_OUTPUT_wy2013a/"
+hisfile = path + "wy2013a_0000_20120801_000000_his.nc"
 savepath = path + "/validation_plots/waterlevel_validation_plots/"
 
 if not os.path.exists(savepath):

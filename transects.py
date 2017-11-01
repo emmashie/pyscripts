@@ -33,9 +33,12 @@ tvalid = utils.fill_invalid(tvalid, axis=0)
 times = tvalid
 
 ### Load in his files, define variables, adjust times to same reference time as USGS data
-path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013/DFM_OUTPUT_wy2013/"
-hisfile = "wy2013_0000_20120801_000000_his.nc"
+path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013a/DFM_OUTPUT_wy2013a/"
+hisfile = "wy2013a_0000_20120801_000000_his.nc"
 #his = nc.MFDataset("/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/r14_0000*.nc")
+
+temp = False
+
 his = nc.MFDataset(path + hisfile)
 xcoor = his.variables["station_x_coordinate"][:]
 ycoor = his.variables["station_y_coordinate"][:]
@@ -43,7 +46,8 @@ dref = 15553*24*60*60
 dtz = 7*60*60
 mtimes = his.variables["time"][:]+dref+dtz
 msalt = his.variables["salinity"][:]
-mtemp = his.variables["temperature"][:]
+if temp == True:
+	mtemp = his.variables["temperature"][:]
 mdepth = his.variables["zcoordinate_c"][:]
 
 mll = np.zeros((2, len(xcoor)))
@@ -62,35 +66,52 @@ for i in range(len(tind[:,0])):
 
 mdates = np.zeros((len(tind[:,0]), len(tind[0,:]), len(mdepth[0,0,:])))
 msalt_ = np.zeros((len(tind[:,0]), len(tind[0,:]), len(mdepth[0,0,:])))
-mtemp_ = np.zeros((len(tind[:,0]), len(tind[0,:]), len(mdepth[0,0,:])))
+if temp == True:
+	mtemp_ = np.zeros((len(tind[:,0]), len(tind[0,:]), len(mdepth[0,0,:])))
 mdepth_ = np.zeros((len(tind[:,0]), len(tind[0,:]), len(mdepth[0,0,:])))
 for i in range(len(msalt_[:,0,0])):
 	for j in range(len(msalt_[0,:,0])):
 		msalt_[i,j,:] = msalt[tind[i,j], llind[j], :]
-		mtemp_[i,j,:] = mtemp[tind[i,j], llind[j], :]
 		mdepth_[i,j,:] = mdepth[tind[i,j], llind[j], :]
 		mdates[i,j,:] = mtimes[tind[i,j]]
+		if temp == True:
+			mtemp_[i,j,:] = mtemp[tind[i,j], llind[j], :]
+
 
 msalt_ = np.ma.masked_where(msalt_ == -999., msalt_)
-mtemp_ = np.ma.masked_where(mtemp_ == -999., mtemp_)
+if temp == True:
+	mtemp_ = np.ma.masked_where(mtemp_ == -999., mtemp_)
 mdepth_ = np.ma.masked_where(mdepth_ == -999., mdepth_)
 
 mdist_ = np.zeros((len(dist), len(mdepth_[0,0,:])))
 for i in range(len(mdepth_[0,0,:])):
 	mdist_[:,i] = dist[:]
 
-mdat = xr.Dataset({'salinity': (['Distance_from_station_36', 'prof_sample'], msalt_[0,:,:]),
+if temp == True:
+	mdat = xr.Dataset({'salinity': (['Distance_from_station_36', 'prof_sample'], msalt_[0,:,:]),
 				   'temperature': (['Distance_from_station_36', 'prof_sample'], mtemp_[0,:,:])}, 
 				 coords={'Distance_from_station_36': (['Distance_from_station_36'], dist), 
 						 'prof_sample': (['prof_sample'], np.arange(10)),
 						 'depth': (['Distance_from_station_36', 'prof_sample'], mdepth_[0,:,:])})						 
-mdat = xr.Dataset({'salinity': (['date', 'Distance_from_station_36', 'prof_sample'], msalt_),
+	mdat = xr.Dataset({'salinity': (['date', 'Distance_from_station_36', 'prof_sample'], msalt_),
 				   'temperature': (['date', 'Distance_from_station_36', 'prof_sample'], mtemp_)}, 
 				 coords={'date': (['date'], np.arange(len(tind))),
 						 'Distance_from_station_36': (['Distance_from_station_36'], dist), 
 						 'prof_sample': (['prof_sample'], np.arange(10)),
 						 'depth': (['date', 'Distance_from_station_36', 'prof_sample'], mdepth_),
 						 'times': (['date', 'Distance_from_station_36', 'prof_sample'], mdates)})
+if temp == False:
+	mdat = xr.Dataset({'salinity': (['Distance_from_station_36', 'prof_sample'], msalt_[0,:,:])},
+				 coords={'Distance_from_station_36': (['Distance_from_station_36'], dist), 
+						 'prof_sample': (['prof_sample'], np.arange(10)),
+						 'depth': (['Distance_from_station_36', 'prof_sample'], mdepth_[0,:,:])})						 
+	mdat = xr.Dataset({'salinity': (['date', 'Distance_from_station_36', 'prof_sample'], msalt_)},
+				 coords={'date': (['date'], np.arange(len(tind))),
+						 'Distance_from_station_36': (['Distance_from_station_36'], dist), 
+						 'prof_sample': (['prof_sample'], np.arange(10)),
+						 'depth': (['date', 'Distance_from_station_36', 'prof_sample'], mdepth_),
+						 'times': (['date', 'Distance_from_station_36', 'prof_sample'], mdates)})
+
 
 # set up figures directory
 figpath = path + "validation_plots/usgs_transects/"
@@ -122,26 +143,27 @@ for d in range(len(tind[:,0])):
 	cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
 	fig.savefig(figpath + "cruise_" + dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d') + "_salt.png")
 	
-	fig,ax=plt.subplots(nrows=2, figsize=(12,6))
-	ax[0].axis('tight')
-	cruise=ds.isel(date=d) # choose a single cruise
-	field='temperature'
-	obs=plot_utils.transect_tricontourf(cruise[field],ax=ax[0],V=np.linspace(14,25,36),
+	if temp == True:
+		fig,ax=plt.subplots(nrows=2, figsize=(12,6))
+		ax[0].axis('tight')
+		cruise=ds.isel(date=d) # choose a single cruise
+		field='temperature'
+		obs=plot_utils.transect_tricontourf(cruise[field],ax=ax[0],V=np.linspace(14,25,36),
                                      cmap='viridis',
                                      xcoord='Distance_from_station_36',
                                      ycoord='depth',
 									 extend='both')
-	ax[0].set_ylabel('Depth (m)')
-	cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
-	ax[0].set_title('cruise# %s' % dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d'))
-	ax[1].axis('tight')
-	mod=plot_utils.transect_tricontourf(mdat.isel(date=d)[field],ax=ax[1],V=np.linspace(14,25,36),
+		ax[0].set_ylabel('Depth (m)')
+		cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
+		ax[0].set_title('cruise# %s' % dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d'))
+		ax[1].axis('tight')
+		mod=plot_utils.transect_tricontourf(mdat.isel(date=d)[field],ax=ax[1],V=np.linspace(14,25,36),
                                      cmap='viridis',
                                      xcoord='Distance_from_station_36',
                                      ycoord='depth',
 									 extend='both')
-	ax[1].set_ylabel('Depth (m)')
-	cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
-	fig.savefig(figpath + "cruise_" + dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d') + "_temp.png")
+		ax[1].set_ylabel('Depth (m)')
+		cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
+		fig.savefig(figpath + "cruise_" + dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d') + "_temp.png")
 	
 

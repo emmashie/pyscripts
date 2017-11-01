@@ -30,8 +30,8 @@ adcp_files = ["SFB1201-2012.nc", "SFB1202-2012.nc", "SFB1203-2012.nc", "SFB1204-
 
 #output_path = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/"			
 #model_files = output_path + "r14_0000_201*.nc"
-output_path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013/DFM_OUTPUT_wy2013/"	
-model_files = output_path + "wy2013_0000_20120801_000000_his.nc"
+output_path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013a/DFM_OUTPUT_wy2013a/"	
+model_files = output_path + "wy2013a_0000_20120801_000000_his.nc"
 mdat = nc.MFDataset(model_files)
 
 # pull out coordinates of model stations
