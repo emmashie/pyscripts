@@ -112,6 +112,13 @@ if temp == False:
 						 'depth': (['date', 'Distance_from_station_36', 'prof_sample'], mdepth_),
 						 'times': (['date', 'Distance_from_station_36', 'prof_sample'], mdates)})
 
+st_names = ["Calaveras Point", "Mowry Slough", "Newark Slough", "Dumbarton Bridge", "Ravenswood Point", 
+			"Coyote Hills", "Redwood Creek", "Steinberger Slough", "S. San Mateo Bridge", "N. San Mateo Bridge",
+			"SF Airport", "San Bruno Shoal", "Oyster Point", "Candlestick Point", "Hunter's Point", "Potrero Point",
+			"Bay Bridge", "Blossom Rock", "Point Blunt", "Racoon Strait", "Charlie Buoy", "Point San Pablo",
+			"Echo Buoy", "N. Pinole Point", "Pinole Shoal", "Mare Island", "Corckett", "Benicia", "Martinez",
+			"Avon Pier", "Roe Island", "Middle Ground", "Simmons Point", "Pittsburg", "Chain Island", "Sacramento River",
+			"Rio Vista"]
 
 # set up figures directory
 figpath = path + "validation_plots/usgs_transects/"
@@ -121,7 +128,7 @@ if not os.path.exists(figpath):
 # avg times for plotting and figure names
 t = np.nanmean(np.nanmean(times,axis=-1),axis=-1)
 for d in range(len(tind[:,0])):
-	fig,ax=plt.subplots(nrows=2, figsize=(12,6))
+	fig,ax=plt.subplots(nrows=3, figsize=(8.5,9.5), sharex=True)
 	ax[0].axis('tight')
 	cruise=ds.isel(date=d) # choose a single cruise
 	field='salinity'
@@ -131,7 +138,8 @@ for d in range(len(tind[:,0])):
                                      ycoord='depth',
 									 extend='both')
 	ax[0].set_ylabel('Depth (m)')
-	cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
+	#cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
+	cbar0 = plt.colorbar(obs,label=field, cax=plt.gcf().add_axes((0.93,0.645,0.01,0.24)))
 	ax[0].set_title('cruise# %s' % dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d'))
 	ax[1].axis('tight')
 	mod=plot_utils.transect_tricontourf(mdat.isel(date=d)[field],ax=ax[1],V=np.linspace(0,35,36),
@@ -140,11 +148,24 @@ for d in range(len(tind[:,0])):
                                      ycoord='depth',
 									 extend='both')
 	ax[1].set_ylabel('Depth (m)')
-	cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
+	#cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
+	cbar1 = plt.colorbar(mod,label=field, cax=plt.gcf().add_axes((0.93,0.375,0.01,0.24)))
+	ln1 = ax[2].plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.nanmean(mdat.isel(date=d)[field].values, axis=-1), 'o-', label="Model - Depth Avg", color="lightseagreen", markersize=4)
+	ln2 = ax[2].plot(cruise["Distance_from_station_36"].values, np.nanmean(cruise[field].values, axis=-1), '^--', label="Obs - Depth Avg", color="lightseagreen", markersize=4)
+	ax[2].tick_params('y', colors="lightseagreen")
+	ax2 = ax[2].twinx()
+	ln3 = ax2.plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.abs(np.nanmin(mdat.isel(date=d)[field],axis=-1)-np.nanmax(mdat.isel(date=d)[field],axis=-1)), 'o-', label="Model - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
+	ln4 = ax2.plot(cruise["Distance_from_station_36"].values, np.abs(np.nanmin(cruise[field].values,axis=-1) - np.nanmax(cruise[field].values,axis=-1)), '^--', label="Obs - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
+	ax2.tick_params('y', colors="slateblue")
+	lns = ln1+ln2+ln3+ln4
+	labels = [l.get_label() for l in lns]
+	ax[2].legend(lns, labels, loc='best', prop={'size': 9})
+	ax[2].set_xticks(cruise["Distance_from_station_36"].values[::3])
+	ax[2].set_xticklabels(st_names[::3], rotation=45)
 	fig.savefig(figpath + "cruise_" + dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d') + "_salt.png")
 	
 	if temp == True:
-		fig,ax=plt.subplots(nrows=2, figsize=(12,6))
+		fig,ax=plt.subplots(nrows=3, figsize=(8.5,7), sharex=True)
 		ax[0].axis('tight')
 		cruise=ds.isel(date=d) # choose a single cruise
 		field='temperature'
@@ -154,7 +175,8 @@ for d in range(len(tind[:,0])):
                                      ycoord='depth',
 									 extend='both')
 		ax[0].set_ylabel('Depth (m)')
-		cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
+		#cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
+		cbar0 = plt.colorbar(obs,label=field, cax=plt.gcf().add_axes((0.93,0.645,0.01,0.24)))
 		ax[0].set_title('cruise# %s' % dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d'))
 		ax[1].axis('tight')
 		mod=plot_utils.transect_tricontourf(mdat.isel(date=d)[field],ax=ax[1],V=np.linspace(14,25,36),
@@ -163,7 +185,20 @@ for d in range(len(tind[:,0])):
                                      ycoord='depth',
 									 extend='both')
 		ax[1].set_ylabel('Depth (m)')
-		cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
+		#cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
+		cbar1 = plt.colorbar(mod,label=field, cax=plt.gcf().add_axes((0.93,0.375,0.01,0.24)))
+		ln1 = ax[2].plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.nanmean(mdat.isel(date=d)[field].values, axis=-1), 'o-', label="Model - Depth Avg", color="lightseagreen", markersize=4)
+		ln2 = ax[2].plot(cruise["Distance_from_station_36"].values, np.nanmean(cruise[field].values, axis=-1), '^--', label="Obs - Depth Avg", color="lightseagreen", markersize=4)
+		ax[2].tick_params('y', colors="lightseagreen")
+		ax2 = ax[2].twinx()
+		ln3 = ax2.plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.abs(np.nanmin(mdat.isel(date=d)[field],axis=-1)-np.nanmax(mdat.isel(date=d)["salinity"],axis=-1)), 'o-', label="Model - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
+		ln4 = ax2.plot(cruise["Distance_from_station_36"].values, np.abs(np.nanmin(cruise[field].values,axis=-1) - np.nanmax(cruise[field].values,axis=-1)), '^--', label="Obs - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
+		ax2.tick_params('y', colors="slateblue")
+		lns = ln1+ln2+ln3+ln4
+		labels = [l.get_label() for l in lns]
+		ax[2].legend(lns, labels, loc='best', prop={'size': 9})
+		ax[2].set_xticks(cruise["Distance_from_station_36"].values[::3])
+		ax[2].set_xticklabels(st_names[::3], rotation=45)
 		fig.savefig(figpath + "cruise_" + dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d') + "_temp.png")
 	
 

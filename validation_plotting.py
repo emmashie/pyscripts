@@ -4,6 +4,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 from stompy.utils import model_skill
+from stompy.utils import rotate_to_principal
 import pyscripts.analysis as an
 from stompy.spatial import proj_utils
 import os
@@ -102,29 +103,44 @@ for i in range(len(llind)):
 		# interpolate model to observation times
 		mubar_i = np.interp(dtimes, mtimes, mubar[:,llind[i]])
 		mvbar_i = np.interp(dtimes, mtimes, mvbar[:,llind[i]])
+		# rotating model and obs to principle axis
+		muvbar = rotate_to_principal(np.asarray([mubar_i, mvbar_i]))
+		uvbar = rotate_to_principal(np.asarray([ubar, vbar]))
 		# computing observation spectra
 		oufreq, ouspec = an.band_avg(time, ubar, dt=(time[1]-time[0])/3600)
 		ovfreq, ovspec = an.band_avg(time, vbar, dt=(time[1]-time[0])/3600) 
+		#oufreq, ouspec = an.band_avg(time, uvbar[0,:], dt=(time[1]-time[0])/3600)
+		#ovfreq, ovspec = an.band_avg(time, uvbar[1,:], dt=(time[1]-time[0])/3600) 
 		# computing model spectra
 		mufreq, muspec = an.band_avg(mtimes, mubar[:,llind[i]])
 		mvfreq, mvspec = an.band_avg(mtimes, mvbar[:,llind[i]])
+		#mufreq, muspec = an.band_avg(time, muvbar[0,:], dt=(time[1]-time[0])/3600)
+		#mvfreq, mvspec = an.band_avg(time, muvbar[1,:], dt=(time[1]-time[0])/3600)
 		# plotting up model & observation time series	
-		fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(12,6))
-		ax[0].plot(mdtime[:], mubar[:,llind[i]], color='lightcoral')
-		ax[0].plot(dtime[:], ubar[:], color='turquoise')
-		ax[0].legend(["model","adcp"])
+		fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(8,4))
+		ax[0].plot(mdtime[:], mubar[:,llind[i]], color='lightslategray', label='Model')
+		ax[0].plot(dtime[:], ubar[:], '--', color='cadetblue', label='ADCP')
+		#ax[0].plot(dtime[:], muvbar[0,:], color='lightcoral', label='Model')
+		#ax[0].plot(dtime[:], uvbar[0,:], color='turquoise', label='ADCP')
+		ax[0].legend()
+		ax[0].set_title(dir[:-5])
 		ax[0].set_ylabel("ubar [m/s]")
-		ax[1].plot(mdtime[:], mvbar[:,llind[i]], color='lightcoral')
-		ax[1].plot(dtime[:], vbar[:], color='turquoise')
-		ax[1].set_xlim((tmin, tmax))
+		ax[1].plot(mdtime[:], mvbar[:,llind[i]], color='lightslategray')
+		ax[1].plot(dtime[:], vbar[:], '--', color='cadetblue')
+		#ax[1].plot(dtime[:], muvbar[1,:], color='lightcoral', label='Model')
+		#ax[1].plot(dtime[:], uvbar[1,:], color='turquoise', label='ADCP')
+		#ax[1].set_xlim((tmin, tmax))
+		ax[1].set_xlim((tmin, tmin+dt.timedelta(days=7)))
 		ax[1].set_ylabel("vbar [m/s]")
+		fig.autofmt_xdate(rotation=45)
 		fig.savefig(ts + "/" + adcp_files[i][:-3] + "_time_series.png")
 		# plot model & observation spectra
-		fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(8,12))
-		ax[0].loglog(mufreq, muspec, color='lightcoral')
-		ax[0].loglog(oufreq, ouspec, 'turquoise')
-		ax[0].legend(["model", "adcp"], loc='best')
+		fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(5,8))
+		ax[0].loglog(mufreq, muspec, color='lightcoral', label='Model')
+		ax[0].loglog(oufreq, ouspec, 'turquoise', label='ADCP')
+		ax[0].legend(loc='best')
 		ax[0].set_ylabel("ubar spectral energy [$(m/s)^2/cph$]")
+		ax[0].set_title(dir[:-5])
 		ax[1].loglog(mvfreq, mvspec, color='lightcoral')
 		ax[1].loglog(ovfreq, ovspec, 'turquoise')
 		ax[1].set_xlabel("frequency [$cph$]")	
@@ -132,80 +148,81 @@ for i in range(len(llind)):
 		ax[1].set_ylabel("vbar spectral energy [$(m/s)^2/cph$]")
 		fig.savefig(spec + "/" + adcp_files[i][:-3] + "_spectra.png")
 		# plot scatter of model & observations
-		fig, ax = plt.subplots(figsize=(7,6))
-		ax.scatter(mubar[:,llind[i]], mvbar[:,llind[i]], s=0.5, alpha=0.5, color='lightcoral')
-		ax.scatter(ubar, vbar, s=0.5, alpha=0.5, color='turquoise')
-		lgnd = ax.legend(["model", "adcp"])
-		lgnd.legendHandles[0]._sizes = [5]
-		lgnd.legendHandles[1]._sizes = [5]
-		ax.set_xlabel("u")
-		ax.set_ylabel("v")
+		fig, ax = plt.subplots(figsize=(5,4))
+		#ax.scatter(mubar[:,llind[i]], mvbar[:,llind[i]], s=0.5, alpha=0.5, color='lightcoral', label='Model')
+		#ax.scatter(ubar, vbar, s=0.5, alpha=0.5, color='turquoise', label='ADCP')
+		ind = np.where(muvbar[0,:]!=0)
+		ax.scatter(muvbar[0,(muvbar[0,:]!=0) & (uvbar[0,:]!=0)], uvbar[0,(muvbar[0,:]!=0) & (uvbar[0,:]!=0)], s=2, color='lightslategray')
+		#lgnd = ax.legend()
+		#lgnd.legendHandles[0]._sizes = [5]
+		#lgnd.legendHandles[1]._sizes = [5]
+		#ax.set_xlabel("u")
+		#ax.set_ylabel("v")
+		ax.set_xlabel("model")
+		ax.set_ylabel("obs")
+		ax.set_title(dir[:-5])
 		fig.savefig(scat + "/" + adcp_files[i][:-3] + "_scatter.png")
 		####### VERTICAL LEVELS #######
 		# interpolate model to observation depths
-		mu_i = np.zeros((len(dep), len(mdtime)))
-		mv_i = np.zeros((len(dep), len(mdtime)))
-		for j in range(len(mdtime)):
-			mu_i[:,j] = np.interp(dep, mdep[j,llind[i],:], mu[j,llind[i],:])
-			mv_i[:,j] = np.interp(dep, mdep[j,llind[i],:], mv[j,llind[i],:])
-		# interpolate model to observation times
-		mu_ii = np.zeros((len(dep), len(dtime)))
-		mv_ii = np.zeros((len(dep), len(dtime)))
-		for k in range(len(dep)):
-			mu_ii[k,:] = np.interp(dtimes, mtimes, mu_i[k,:])
-			mv_ii[k,:] = np.interp(dtimes, mtimes, mv_i[k,:])
-			# check for nans in observations
-			dumu = u[k,:]
-			unan = dumu[~np.isnan(dumu)]
-			utime = time[~np.isnan(dumu)]
-			dumv = v[k,:]
-			vnan = dumv[~np.isnan(dumv)]
-			vtime = time[~np.isnan(dumv)]
-			# computing observation spectra
-			oufreq, ouspec = an.band_avg(utime, unan, dt=(time[1]-time[0])/3600)
-			ovfreq, ovspec = an.band_avg(vtime, vnan, dt=(time[1]-time[0])/3600) 
-			# computing model spectra
-			mufreq, muspec = an.band_avg(mtimes, mu_i[k,:])
-			mvfreq, mvspec = an.band_avg(mtimes, mv_i[k,:])
-			# plotting up model & observation time series	
-			fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(12,6))
-			ax[0].plot(mdtime[:], mu_i[k,:], color='lightcoral')
-			ax[0].plot(dtime[:], u[k,:], color='turquoise')
-			ax[0].legend(["model","adcp"])
-			ax[0].set_ylabel("u [m/s]")
-			ax[1].plot(mdtime[:], mv_i[k,:], color='lightcoral')
-			ax[1].plot(dtime[:], v[k,:], color='turquoise')
-			ax[1].set_xlim((tmin, tmax))
-			ax[1].set_ylabel("v [m/s]")
-			ax[0].set_title("Depth %f" %dep[k])
-			fig.savefig(ts + "/" + adcp_files[i][:-3] + "_" + str(-dep[k]) + "_time_series.png")
-			# plot model & observation spectra
-			fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(8,12))
-			ax[0].loglog(mufreq, muspec, color='lightcoral')
-			ax[0].loglog(oufreq, ouspec, 'turquoise')
-			ax[0].legend(["model", "adcp"], loc='best')
-			ax[0].set_ylabel("u spectral energy [$(m/s)^2/cph$]")
-			ax[1].loglog(mvfreq, mvspec, color='lightcoral')
-			ax[1].loglog(ovfreq, ovspec, 'turquoise')
-			ax[1].set_xlabel("frequency [$cph$]")	
-			ax[1].set_xlim((10**-4, 0.5))
-			ax[1].set_ylabel("v spectral energy [$(m/s)^2/cph$]")
-			ax[0].set_title("Depth %f" %dep[k])
-			fig.savefig(spec + "/" + adcp_files[i][:-3] + "_" + str(-dep[k]) + "_spectra.png")
-			# plot scatter of model & observations
-			fig, ax = plt.subplots()
-			ax.scatter(mu_i[k,:], mv_i[k,:], s=0.5, alpha=0.5, color='lightcoral')
-			ax.scatter(u[k,:], v[k,:], s=0.5, alpha=0.5, color='turquoise')
-			lgnd = ax.legend(["model", "adcp"])
-			lgnd.legendHandles[0]._sizes = [5]
-			lgnd.legendHandles[1]._sizes = [5]		
-			ax.set_xlabel("u")
-			ax.set_ylabel("v")
-			ax.set_title("Depth %f" %dep[k])
-			fig.savefig(scat + "/" + adcp_files[i][:-3] + "_" + str(-dep[k]) + "_scatter.png")
+#		mu_i = np.zeros((len(dep), len(mdtime)))
+#		mv_i = np.zeros((len(dep), len(mdtime)))
+#		for j in range(len(mdtime)):
+#			mu_i[:,j] = np.interp(dep, mdep[j,llind[i],:], mu[j,llind[i],:])
+#			mv_i[:,j] = np.interp(dep, mdep[j,llind[i],:], mv[j,llind[i],:])
+#		# interpolate model to observation times
+#		mu_ii = np.zeros((len(dep), len(dtime)))
+#		mv_ii = np.zeros((len(dep), len(dtime)))
+#		for k in range(len(dep)):
+#			mu_ii[k,:] = np.interp(dtimes, mtimes, mu_i[k,:])
+#			mv_ii[k,:] = np.interp(dtimes, mtimes, mv_i[k,:])
+#			# check for nans in observations
+#			dumu = u[k,:]
+#			unan = dumu[~np.isnan(dumu)]
+#			utime = time[~np.isnan(dumu)]
+#			dumv = v[k,:]
+#			vnan = dumv[~np.isnan(dumv)]
+#			vtime = time[~np.isnan(dumv)]
+#			# computing observation spectra
+#			oufreq, ouspec = an.band_avg(utime, unan, dt=(time[1]-time[0])/3600)
+#			ovfreq, ovspec = an.band_avg(vtime, vnan, dt=(time[1]-time[0])/3600) 
+#			# computing model spectra
+#			mufreq, muspec = an.band_avg(mtimes, mu_i[k,:])
+#			mvfreq, mvspec = an.band_avg(mtimes, mv_i[k,:])
+#			# plotting up model & observation time series	
+#			fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(12,6))
+#			ax[0].plot(mdtime[:], mu_i[k,:], color='lightcoral', label='Model')
+#			ax[0].plot(dtime[:], u[k,:], color='turquoise', label='ADCP')
+#			ax[0].legend()
+#			ax[0].set_ylabel("u [m/s]")
+#			ax[1].plot(mdtime[:], mv_i[k,:], color='lightcoral')
+#			ax[1].plot(dtime[:], v[k,:], color='turquoise')
+#			#ax[1].set_xlim((tmin, tmax))
+#			ax[1].set_xlim((tmin, tmin+dt.timedelta(days=7)))
+#			ax[1].set_ylabel("v [m/s]")
+#			ax[0].set_title("Depth %f" %dep[k])
+#			fig.savefig(ts + "/" + adcp_files[i][:-3] + "_" + str(-dep[k]) + "_time_series.png")
+#			# plot model & observation spectra
+#			fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(8,12))
+#			ax[0].loglog(mufreq, muspec, color='lightcoral', label="Model")
+#			ax[0].loglog(oufreq, ouspec, 'turquoise', label="ADCP")
+#			ax[0].legend(loc='best')
+#			ax[0].set_ylabel("u spectral energy [$(m/s)^2/cph$]")
+#			ax[1].loglog(mvfreq, mvspec, color='lightcoral')
+#			ax[1].loglog(ovfreq, ovspec, 'turquoise')
+#			ax[1].set_xlabel("frequency [$cph$]")	
+#			ax[1].set_xlim((10**-4, 0.5))
+#			ax[1].set_ylabel("v spectral energy [$(m/s)^2/cph$]")
+#			ax[0].set_title("Depth %f" %dep[k])
+#			fig.savefig(spec + "/" + adcp_files[i][:-3] + "_" + str(-dep[k]) + "_spectra.png")
+#			# plot scatter of model & observations
+#			fig, ax = plt.subplots()
+#			ax.scatter(mu_i[k,:], mv_i[k,:], s=0.5, alpha=0.5, color='lightcoral', label='Model')
+#			ax.scatter(u[k,:], v[k,:], s=0.5, alpha=0.5, color='turquoise', label='ADCP')
+#			lgnd = ax.legend()
+#			lgnd.legendHandles[0]._sizes = [5]
+#			lgnd.legendHandles[1]._sizes = [5]		
+#			ax.set_xlabel("u")
+#			ax.set_ylabel("v")
+#			ax.set_title("Depth %f" %dep[k])
+#			fig.savefig(scat + "/" + adcp_files[i][:-3] + "_" + str(-dep[k]) + "_scatter.png")
 	plt.close("all")
-	
-	
-	
-	
-	
