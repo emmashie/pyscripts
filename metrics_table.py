@@ -68,11 +68,11 @@ def metric_table(obspath, obs, modpath, mod, metpath, met):
     	mubar = np.mean(mu, axis=-1)
     	mvbar = np.mean(mv, axis=-1)
     	mdep = mdat.variables["zcoordinate_c"][:]
-        	# take model time (referenced to 2012-08-01) and create datetime objects to use for plotting
-        	mdtime = []
-        	for j in range(len(mtime)):
-        		mdtime.append(dt.datetime.fromtimestamp(mtime[j] + 15553*86400, tz=dt.timezone.utc))
-        	# convert datetime objects to datenums to use for interpolation 
+        # take model time (referenced to 2012-08-01) and create datetime objects to use for plotting
+        mdtime = []
+    	for j in range(len(mtime)):
+    		mdtime.append(dt.datetime.fromtimestamp(mtime[j] + 15553*86400, tz=dt.timezone.utc))
+            # convert datetime objects to datenums to use for interpolation 
         	mtimes = date2num(mdtime)
         	# take observation time and create datetime objects 
         	dtime = []
