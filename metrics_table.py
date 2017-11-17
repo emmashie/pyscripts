@@ -38,10 +38,11 @@ for i in range(len(xcoor)):
 path = output_path + "model_metrics/"
 f = open(path + fname, "w")
 # write header line
-f.write("\\begin{center}")
-f.write("	\\begin{tabular}{| l | l | l | l | l | l | l | l | l |} \n")
-f.write("	\\hline \n")
-f.write("   Name & Skill [u] & Skill [v] & Bias [u] & Bias [v] & \(r^2\) [u] & \(r^2\) [v] & RMS [u] & RMS [v] \\\ \\hline \n")
+f.write("\\begin{center} \n")
+f.write("\\begin{adjustbox}{width=1\\textwidth}\n")
+f.write("\\begin{tabular}{| l | l | l | l | l | l | l | l | l |} \n")
+f.write("\\hline \n")
+f.write("Name & Skill [u] & Skill [v] & Bias [u] & Bias [v] & \(r^2\) [u] & \(r^2\) [v] & RMS [u] & RMS [v] \\\ \\hline \n")
 #f.write("filename, skill [u], skill [v], bias [u], bias [v], r2 [u], r2 [v], rms [u], rms [v]\n")
 # find model station indicies closest to observation 
 llind = np.zeros(len(obs))
@@ -98,9 +99,10 @@ for i in range(len(llind)):
 		msu, biasu, r2u, rmsu = an.model_metrics(mubar_i[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], ubar[(time >= tmin.timestamp()) & (time <= tmax.timestamp())])
 		msv, biasv, r2v, rmsv = an.model_metrics(mvbar_i[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], vbar[(time >= tmin.timestamp()) & (time <= tmax.timestamp())])
 		#f.write("%s, avg, %f, %f, %f, %f, %f, %f, %f, %f \n" % (dir, msu, msv, biasu, biasv, r2u, r2v, rmsu, rmsv))
-		f.write("   %s & %f & %f & %f & %f & %f & %f & %f & %f \\\ \\hline \n" % (dir, msu, msv, biasu, biasv, r2u, r2v, rmsu, rmsv))
-f.write("   \\hline \n")
-f.write("   \\end{tabular} \n")
+		f.write("%s & %f & %f & %f & %f & %f & %f & %f & %f \\\ \\hline \n" % (dir, msu, msv, biasu, biasv, r2u, r2v, rmsu, rmsv))
+f.write("\\hline \n")
+f.write("\\end{tabular} \n")
+f.write("\end{adjustbox}\n")
 f.write("\\end{center} \n")
 f.close()	
       
