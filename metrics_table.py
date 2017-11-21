@@ -57,29 +57,29 @@ def metric_table(obspath, obs, modpath, mod, metpath, met):
         mdtime = []
         for j in range(len(mtime)):
             mdtime.append(dt.datetime.fromtimestamp(mtime[j] + 15553*86400, tz=dt.timezone.utc))
-            # convert datetime objects to datenums to use for interpolation 
-            mtimes = date2num(mdtime)
-            # take observation time and create datetime objects
-            dtime = []
-            for j in range(len(time)):
-                dtime.append(dt.datetime.fromtimestamp(time[j], tz=dt.timezone.utc))
-            # convert datetime objects to datenums to use for interpolation
-            dtimes = date2num(dtime)
-            # check for overlapping observations and model data
-            if dtime[0] < mdtime[0]:
-                tmin = mdtime[0]
-            else:
-                tmin = dtime[0]
-            if dtime[-1] < mdtime[-1]:
-                tmax = dtime[-1]
-            else:
-                tmax = mdtime[-1]
-            if tmin < tmax:
-                mubar_i = np.interp(dtimes, mtimes, mubar[:,llind[i]])
-                mvbar_i = np.interp(dtimes, mtimes, mvbar[:,llind[i]])
-                msu, biasu, r2u, rmsu = an.model_metrics(mubar_i[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], ubar[(time >= tmin.timestamp()) & (time <= tmax.timestamp())])
-                msv, biasv, r2v, rmsv = an.model_metrics(mvbar_i[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], vbar[(time >= tmin.timestamp()) & (time <= tmax.timestamp())])
-                f.write("%s & %f & %f & %f & %f & %f & %f & %f & %f \\\ \\hline \n" % (dir, msu, msv, biasu, biasv, r2u, r2v, rmsu, rmsv))
+        # convert datetime objects to datenums to use for interpolation 
+        mtimes = date2num(mdtime)
+        # take observation time and create datetime objects
+        dtime = []
+        for j in range(len(time)):
+            dtime.append(dt.datetime.fromtimestamp(time[j], tz=dt.timezone.utc))
+        # convert datetime objects to datenums to use for interpolation
+        dtimes = date2num(dtime)
+        # check for overlapping observations and model data
+        if dtime[0] < mdtime[0]:
+            tmin = mdtime[0]
+        else:
+            tmin = dtime[0]
+        if dtime[-1] < mdtime[-1]:
+            tmax = dtime[-1]
+        else:
+            tmax = mdtime[-1]
+        if tmin < tmax:
+            mubar_i = np.interp(dtimes, mtimes, mubar[:,llind[i]])
+            mvbar_i = np.interp(dtimes, mtimes, mvbar[:,llind[i]])
+            msu, biasu, r2u, rmsu = an.model_metrics(mubar_i[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], ubar[(time >= tmin.timestamp()) & (time <= tmax.timestamp())])
+            msv, biasv, r2v, rmsv = an.model_metrics(mvbar_i[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], vbar[(time >= tmin.timestamp()) & (time <= tmax.timestamp())])
+            f.write("%s & %f & %f & %f & %f & %f & %f & %f & %f \\\ \\hline \n" % (dir[:-5], msu, msv, biasu, biasv, r2u, r2v, rmsu, rmsv))
     f.write("\\hline \n")
     f.write("\\end{tabular} \n")
     f.write("\\end{adjustbox} \n")
@@ -113,7 +113,7 @@ metric_table(obspath, obs, modpath, mod, metpath, met)
 # adcp observations
 met = "coastal_adcp_metrics"
 obs = ["SFB1201-2012.nc", "SFB1220-2012.nc", "SFB1221-2012.nc", "SFB1222-2012.nc",
-        "SFB1223-2012.nc", "SFB1224-2012.nc", "SFB1225-2012.nc"]
+        "SFB1223-2012.nc"]
         
 metric_table(obspath, obs, modpath, mod, metpath, met)
 

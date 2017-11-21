@@ -117,7 +117,7 @@ for i in range(len(llind)):
 		#mufreq, muspec = an.band_avg(time, muvbar[0,:], dt=(time[1]-time[0])/3600)
 		#mvfreq, mvspec = an.band_avg(time, muvbar[1,:], dt=(time[1]-time[0])/3600)
 		# plotting up model & observation time series	
-		fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(8,4))
+		fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(8,7))
 		ax[0].plot(mdtime[:], mubar[:,llind[i]], color='lightslategray', label='Model')
 		ax[0].plot(dtime[:], ubar[:], '--', color='cadetblue', label='ADCP')
 		#ax[0].plot(dtime[:], muvbar[0,:], color='lightcoral', label='Model')
@@ -148,11 +148,17 @@ for i in range(len(llind)):
 		ax[1].set_ylabel("vbar spectral energy [$(m/s)^2/cph$]")
 		fig.savefig(spec + "/" + adcp_files[i][:-3] + "_spectra.png")
 		# plot scatter of model & observations
-		fig, ax = plt.subplots(figsize=(5,4))
+		fig, ax = plt.subplots(figsize=(5,3.9))
 		#ax.scatter(mubar[:,llind[i]], mvbar[:,llind[i]], s=0.5, alpha=0.5, color='lightcoral', label='Model')
 		#ax.scatter(ubar, vbar, s=0.5, alpha=0.5, color='turquoise', label='ADCP')
+		mn = np.min([np.nanmin(muvbar[0,:]), np.nanmin(uvbar[0,:])])
+		mx = np.max([np.nanmax(muvbar[0,:]), np.nanmax(uvbar[0,:])])
+		lin = np.linspace(mn,mx)
+		ax.plot(lin,lin, color="lightskyblue", alpha=0.6)
 		ind = np.where(muvbar[0,:]!=0)
 		ax.scatter(muvbar[0,(muvbar[0,:]!=0) & (uvbar[0,:]!=0)], uvbar[0,(muvbar[0,:]!=0) & (uvbar[0,:]!=0)], s=2, color='lightslategray')
+		ax.set_xlim((mn,mx))
+		ax.set_ylim((mn,mx))
 		#lgnd = ax.legend()
 		#lgnd.legendHandles[0]._sizes = [5]
 		#lgnd.legendHandles[1]._sizes = [5]

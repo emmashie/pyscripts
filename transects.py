@@ -153,10 +153,12 @@ for d in range(len(tind[:,0])):
 	ln1 = ax[2].plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.nanmean(mdat.isel(date=d)[field].values, axis=-1), 'o-', label="Model - Depth Avg", color="lightseagreen", markersize=4)
 	ln2 = ax[2].plot(cruise["Distance_from_station_36"].values, np.nanmean(cruise[field].values, axis=-1), '^--', label="Obs - Depth Avg", color="lightseagreen", markersize=4)
 	ax[2].tick_params('y', colors="lightseagreen")
+	ax[2].set_ylabel("salt [ppt]", color="lightseagreen")
 	ax2 = ax[2].twinx()
 	ln3 = ax2.plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.abs(np.nanmin(mdat.isel(date=d)[field],axis=-1)-np.nanmax(mdat.isel(date=d)[field],axis=-1)), 'o-', label="Model - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
 	ln4 = ax2.plot(cruise["Distance_from_station_36"].values, np.abs(np.nanmin(cruise[field].values,axis=-1) - np.nanmax(cruise[field].values,axis=-1)), '^--', label="Obs - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
 	ax2.tick_params('y', colors="slateblue")
+	ax2.set_ylabel("stratification (ds/dz) [ppt]", color="slateblue")
 	lns = ln1+ln2+ln3+ln4
 	labels = [l.get_label() for l in lns]
 	ax[2].legend(lns, labels, loc='best', prop={'size': 9})
