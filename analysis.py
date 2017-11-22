@@ -4,6 +4,8 @@ import numpy as np
 import scipy
 from numpy.fft import fft, ifft, fftshift, fftfreq
 from stompy.utils import model_skill
+from stompy.utils import find_lag
+from stompy.utils import rms
 
 def blackman_window(width=0):
     x = np.linspace(-1, 1, width + 2, endpoint=True) * np.pi
@@ -38,12 +40,14 @@ def band_avg(x=0, y=0, m=5, dt=1, window='Blackman'):
     spectra_avg = np.convolve(boxcar, spectra, mode='same')       
     return freqs, spectra_avg
 
-def model_metrics(mod, obs):
-	""" calculate model metrics 
-	    mod and obs must be at same time and equivalent length
-	"""
-	ms = model_skill(mod, obs)
-	bias = np.mean(mod-obs)
-	r2 = np.corrcoef(mod, obs)[0,1]**2
-	rms = np.mean(np.sqrt((mod - obs)**2))
-	return ms, bias, r2, rms
+def model_metrics(tmod, mod, tobs, obs):
+    """ calculate model metrics
+        mod and obs must be at same time and equivalent length
+    """
+    ms = model_skill(mod, obs)
+    bias = np.mean(mod-obs)
+    r2 = np.corrcoef(mod, obs)[0,1]**2
+    rms_rat = rms(mod-obs)
+    lag = find_lag(tmod, mod, tobs, obs)
+    return ms, bias, r2, rms_rat, lag
+
