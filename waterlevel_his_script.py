@@ -23,7 +23,7 @@ f.write("\\begin{center} \n")
 f.write("\\begin{adjustbox}{width=1\\textwidth} \n")
 f.write("\\begin{tabular}{| l | l | l | l | l | l |} \n")
 f.write("\\hline \n")
-f.write("Name & Skill &  Bias [m] & \(r^2\) & RMS [m] & Lag [s] \\\ \\hline \n")
+f.write("Name & Skill &  Bias & \(r^2\) & RMS & Lag \\\ \\hline \n")
 
 if not os.path.exists(savepath):
 	os.makedirs(savepath)

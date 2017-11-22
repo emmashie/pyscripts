@@ -34,7 +34,7 @@ def metric_table(obspath, obs, modpath, mod, metpath, met):
     f.write("\\begin{adjustbox}{width=1\\textwidth} \n")
     f.write("\\begin{tabular}{| l | l | l | l | l | l | l | l | l | l | l |} \n")
     f.write("\\hline \n")
-    f.write("Name & Skill (West) & Skill (North) & Bias (West) [m/s] & Bias (North) [m/s] & \(r^2\) (West) & \(r^2\) (North) & RMS (West) [m/s] & RMS (North) [m/s] & Lag (West) [s] & Lag (North) [s]\\\ \\hline \n")
+    f.write("Name & Skill (West) & Skill (North) & Bias (West) & Bias (North) & \(r^2\) (West) & \(r^2\) (North) & RMS (West) & RMS (North) & Lag (West) & Lag (North)\\\ \\hline \n")
     # find model station indicies closest to observation
     llind = np.zeros(len(obs))
     for i in range(len(llind)):
