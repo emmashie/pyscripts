@@ -8,12 +8,22 @@ from stompy.spatial import proj_utils
 import os
 import netCDF4 as nc
 from stompy.io.local import noaa_coops
+import pyscripts.analysis as an
 
 
 #hisfile = "/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/r14_0000*.nc"
 path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013a/DFM_OUTPUT_wy2013a/"
 hisfile = path + "wy2013a_0000_20120801_000000_his.nc"
 savepath = path + "/validation_plots/waterlevel_validation_plots/"
+metpath = savepath + "model_metrics/"
+met = "waterlevel_metrics"
+
+f = open(metpath + met, "w")
+f.write("\\begin{center} \n")
+f.write("\\begin{adjustbox}{width=1\\textwidth} \n")
+f.write("\\begin{tabular}{| l | l | l | l | l | l |} \n")
+f.write("\\hline \n")
+f.write("Name & Skill &  Bias [m] & \(r^2\) & RMS [m] & Lag [s] \\\ \\hline \n")
 
 if not os.path.exists(savepath):
 	os.makedirs(savepath)
@@ -30,7 +40,6 @@ mll = np.zeros((2, len(xcoor)))
 for i in range(len(xcoor)):
 	mll[:,i] = utm_to_ll([xcoor[i], ycoor[i]])
 
-
 ##### station 9414290
 dat =  noaa_coops.coops_dataset_product(station="9414290", product="water_level", start_date=np.datetime64("2012-08-01"), end_date=np.datetime64("2013-09-01"), days_per_request=31)
 lon = dat["lon"].values[0,0]
@@ -46,6 +55,8 @@ mtime, mwaterlevel = wv.load_model(hisfile, rec=rec)
 mtimes = date2num(mtime)
 mwaterleveli = np.interp(times, mtimes, np.asarray(mwaterlevel)[:,0])
 mfreq, mspec = an.band_avg(mtimes, np.asarray(mwaterlevel)[:,0])
+ms, bias, r2, rms, lag = an.model_metrics(times, mwaterleveli, times, waterlevel)
+f.write("San Francisco & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f \\\ \\hline \n" % (ms, bias, r2, rms, lag))
 # plotting
 fig, ax = plt.subplots(figsize=(6,4))
 ax.plot(time, waterlevel, color='cornflowerblue')
@@ -56,6 +67,8 @@ ax.set_ylabel("m")
 ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
 fig.autofmt_xdate()
 fig.savefig(savepath + "SanFrancisco.png")
+
+
 
 
 ##### station 9415020
@@ -73,6 +86,8 @@ mtime, mwaterlevel = wv.load_model(hisfile, rec=rec)
 mtimes = date2num(mtime)
 mwaterleveli = np.interp(times, mtimes, np.asarray(mwaterlevel)[:,0])
 mfreq, mspec = an.band_avg(mtimes, np.asarray(mwaterlevel)[:,0])
+ms, bias, r2, rms, lag = an.model_metrics(times, mwaterleveli, times, waterlevel)
+f.write("Point Reyes & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f \\\ \\hline \n" % (ms, bias, r2, rms, lag))
 # plotting
 fig, ax = plt.subplots(figsize=(6,4))
 ax.plot(time, waterlevel, color='cornflowerblue')
@@ -101,6 +116,8 @@ mtime, mwaterlevel = wv.load_model(hisfile, rec=rec)
 mtimes = date2num(mtime)
 mwaterleveli = np.interp(times, mtimes, np.asarray(mwaterlevel)[:,0])
 mfreq, mspec = an.band_avg(mtimes, np.asarray(mwaterlevel)[:,0])
+ms, bias, r2, rms, lag = an.model_metrics(times, mwaterleveli, times, waterlevel)
+f.write("Richmond & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f \\\ \\hline \n" % (ms, bias, r2, rms, lag))
 # plotting
 fig, ax = plt.subplots(figsize=(6,4))
 ax.plot(time, waterlevel, color='cornflowerblue')
@@ -129,6 +146,8 @@ mtime, mwaterlevel = wv.load_model(hisfile, rec=rec)
 mtimes = date2num(mtime)
 mwaterleveli = np.interp(times, mtimes, np.asarray(mwaterlevel)[:,0])
 mfreq, mspec = an.band_avg(mtimes, np.asarray(mwaterlevel)[:,0])
+ms, bias, r2, rms, lag = an.model_metrics(times, mwaterleveli, times, waterlevel)
+f.write("Alameda & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f \\\ \\hline \n" % (ms, bias, r2, rms, lag))
 # plotting
 fig, ax = plt.subplots(figsize=(6,4))
 ax.plot(time, waterlevel, color='cornflowerblue')
@@ -139,7 +158,6 @@ ax.set_ylabel("m")
 ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
 fig.autofmt_xdate()
 fig.savefig(savepath + "Alameda.png")
-
 
 
 ##### station 9414523
@@ -157,6 +175,8 @@ mtime, mwaterlevel = wv.load_model(hisfile, rec=rec)
 mtimes = date2num(mtime)
 mwaterleveli = np.interp(times, mtimes, np.asarray(mwaterlevel)[:,0])
 mfreq, mspec = an.band_avg(mtimes, np.asarray(mwaterlevel)[:,0])
+ms, bias, r2, rms, lag = an.model_metrics(times, mwaterleveli, times, waterlevel)
+f.write("Redwood City & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f \\\ \\hline \n" % (ms, bias, r2, rms, lag))
 # plotting
 fig, ax = plt.subplots(figsize=(6,4))
 ax.plot(time, waterlevel, color='cornflowerblue')
@@ -167,6 +187,11 @@ ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
 fig.autofmt_xdate()
 fig.savefig(savepath + "RedwoodCity.png")
 
+f.write("\\hline \n")
+f.write("\\end{tabular} \n")
+f.write("\\end{adjustbox} \n")
+f.write("\\end{center} \n")
+f.close()
 
 
 #fig, ax = plt.subplots(nrows=4, sharex=True, figsize=(10,10))

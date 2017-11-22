@@ -79,7 +79,7 @@ def metric_table(obspath, obs, modpath, mod, metpath, met):
             mvbar_i = np.interp(dtimes, mtimes, mvbar[:,llind[i]])
             msu, biasu, r2u, rmsu, lagu = an.model_metrics(dtimes[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], mubar_i[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], dtimes[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], ubar[(time >= tmin.timestamp()) & (time <= tmax.timestamp())])
             msv, biasv, r2v, rmsv, lagv = an.model_metrics(dtimes[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], mvbar_i[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], dtimes[(time >= tmin.timestamp()) & (time <= tmax.timestamp())], vbar[(time >= tmin.timestamp()) & (time <= tmax.timestamp())])
-            f.write("%s & %f & %f & %f & %f & %f & %f & %f & %f & %f & %f \\\ \\hline \n" % (dir[:-5], msu, msv, biasu, biasv, r2u, r2v, rmsu, rmsv, lagu, lagv))
+            f.write("%s & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f & %0.2f \\\ \\hline \n" % (dir[:-5], msu, msv, biasu, biasv, r2u, r2v, rmsu, rmsv, lagu, lagv))
     f.write("\\hline \n")
     f.write("\\end{tabular} \n")
     f.write("\\end{adjustbox} \n")
