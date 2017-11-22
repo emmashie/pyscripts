@@ -67,6 +67,7 @@ ax.set_ylabel("m")
 ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
 fig.autofmt_xdate()
 fig.savefig(savepath + "SanFrancisco.png")
+fig.savefig(savepath + "SanFrancisco", format='pdf')
 
 
 
@@ -98,7 +99,7 @@ ax.set_ylabel("m")
 ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
 fig.autofmt_xdate()
 fig.savefig(savepath + "PointReyes.png")
-
+fig.savefig(savepath + "PointReyes", format='pdf')
 
 
 ##### station 9414863
@@ -128,7 +129,7 @@ ax.set_ylabel("m")
 ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
 fig.autofmt_xdate()
 fig.savefig(savepath + "Richmond.png")
-
+fig.savefig(savepath + "Richmond", format='pdf')
 
 
 ##### station 9414750
@@ -158,6 +159,7 @@ ax.set_ylabel("m")
 ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
 fig.autofmt_xdate()
 fig.savefig(savepath + "Alameda.png")
+fig.savefig(savepath + "Alameda", format='pdf')
 
 
 ##### station 9414523
@@ -186,6 +188,7 @@ ax.legend(["obs","model"], loc='best')
 ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
 fig.autofmt_xdate()
 fig.savefig(savepath + "RedwoodCity.png")
+fig.savefig(savepath + "RedwoodCity", format='pdf')
 
 f.write("\\hline \n")
 f.write("\\end{tabular} \n")
