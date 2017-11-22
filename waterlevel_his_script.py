@@ -15,7 +15,7 @@ import pyscripts.analysis as an
 path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013a/DFM_OUTPUT_wy2013a/"
 hisfile = path + "wy2013a_0000_20120801_000000_his.nc"
 savepath = path + "/validation_plots/waterlevel_validation_plots/"
-metpath = savepath + "model_metrics/"
+metpath = path + "model_metrics/"
 met = "waterlevel_metrics"
 
 f = open(metpath + met, "w")
