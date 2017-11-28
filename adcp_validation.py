@@ -190,16 +190,12 @@ for region_name,region_adcps in [ ('south',south_adcps),
             fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(8,7))
             ax[0].plot(mdtime[:], mubar[:,llind], color=mod_color, label='Model')
             ax[0].plot(dtime[:], ubar[:], '--', color=obs_color, label='ADCP')
-            #ax[0].plot(dtime[:], muvbar[0,:], color='lightcoral', label='Model')
-            #ax[0].plot(dtime[:], uvbar[0,:], color='turquoise', label='ADCP')
-            ax[0].legend()
+            
+            ax[0].legend(loc='upper right') # specify for consistency
             ax[0].set_title(dir[:-5])
             ax[0].set_ylabel("Eastward Velocity [m/s]")
             ax[1].plot(mdtime[:], mvbar[:,llind], color=mod_color)
             ax[1].plot(dtime[:], vbar[:], '--', color=obs_color)
-            #ax[1].plot(dtime[:], muvbar[1,:], color='lightcoral', label='Model')
-            #ax[1].plot(dtime[:], uvbar[1,:], color='turquoise', label='ADCP')
-            #ax[1].set_xlim((tmin, tmax))
             ax[1].set_xlim((tmin, tmin+dt.timedelta(days=7)))
             ax[1].set_ylabel("Northward Velocity [m/s]")
             fig.autofmt_xdate(rotation=45)
@@ -221,7 +217,7 @@ for region_name,region_adcps in [ ('south',south_adcps),
             fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(5,8))
             ax[0].loglog(mufreq, muspec, color='lightcoral', label='Model')
             ax[0].loglog(oufreq, ouspec, 'turquoise', label='ADCP')
-            ax[0].legend(loc='best')
+            ax[0].legend(loc='upper right') # specify for consistency
             ax[0].set_ylabel("ubar spectral energy [$(m/s)^2/cph$]")
             ax[0].set_title(dir[:-5])
             ax[1].loglog(mvfreq, mvspec, color='lightcoral')
@@ -258,12 +254,12 @@ for region_name,region_adcps in [ ('south',south_adcps),
             mid_y=0.5*(np.sin(mtheta)+np.sin(theta))
 
             if 1: # add a pair of arrows to indicate the positive velocity direction
-                xy=(0.7,0.25)
-                length=0.2
+                length=0.17
+                xy=(1-length,length)
                 for a_theta,label,lw,col in [(mtheta,'Mod',0.8,mod_color),
                                  (theta,'Obs',1.4,obs_color)]:
                     xy_tip=(xy[0] + length*np.cos(a_theta),
-                        xy[1] + length*np.sin(a_theta))
+                            xy[1] + length*np.sin(a_theta))
                     # Draw the arrow:
                     ax.annotate("",
                             xy=xy_tip,
@@ -272,20 +268,26 @@ for region_name,region_adcps in [ ('south',south_adcps),
                             textcoords='axes fraction',
                             arrowprops=dict(arrowstyle="->",connectionstyle="arc3",color=col),
                     )
+                    xy_label=(xy[0]+0.65*length*np.cos(a_theta),
+                              xy[1]+0.65*length*np.sin(a_theta))
                     if np.sin(a_theta) > mid_y:
                         # And the label separately
-                        ax.text( xy_tip[0],xy_tip[1],
-                             "%s\n "%label,transform=ax.transAxes,color=col,
-                             va='center',ha='center',
-                             rotation= (a_theta*180/np.pi +90)%180. - 90)
+                        ax.text( xy_label[0],xy_label[1],
+                                 "%s\n "%label,transform=ax.transAxes,color=col,
+                                 va='center',ha='center',
+                                 rotation= (a_theta*180/np.pi +90)%180. - 90)
                     else:
                         # And the label separately
-                        ax.text( xy_tip[0],xy_tip[1],
-                             "\n%s"%label,transform=ax.transAxes,color=col,
-                             va='center',ha='center',
-                             rotation= (a_theta*180/np.pi +90)%180. - 90)
+                        ax.text(  xy_label[0],xy_label[1],
+                                  "\n%s"%label,transform=ax.transAxes,color=col,
+                                  va='center',ha='center',
+                                  rotation= (a_theta*180/np.pi +90)%180. - 90)
+                ax.fill([xy[0]-length,xy[0]+length,xy[0]+length,xy[0]-length],
+                        [xy[1]-length,xy[1]-length,xy[1]+length,xy[1]+length],
+                        color='w',alpha=0.5,transform=ax.transAxes)
 
             fig.subplots_adjust(left=0.19) # give y label a bit of space
+            # assert False #DBG
             fig.savefig(scat + "/" + adcp_file[:-3] + "_scatter.png")
             fig.savefig(scat + "/" + adcp_file[:-3] + "_scatter.pdf", format='pdf')
 
