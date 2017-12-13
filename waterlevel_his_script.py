@@ -17,8 +17,11 @@ from stompy import utils
 # hisfile = path + "wy2013a_0000_20120801_000000_his.nc"
 
 # RH 2017-11-27: update to run with "better" Delta flows
-path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013b/DFM_OUTPUT_wy2013b/"
-hisfile = path + "wy2013b_0000_20120801_000000_his.nc"
+# RH 2017-12-04: update to attenuated tides and possible evaporation
+base_path="/opt/data/delft/sfb_dfm_v2/runs/"
+run_name="wy2013c"
+path = "/opt/data/delft/sfb_dfm_v2/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
+hisfile = path + "%s_0000_20120801_000000_his.nc"%run_name
 
 
 savepath = path + "/validation_plots/waterlevel_validation_plots/"
@@ -71,11 +74,13 @@ def noaa_cached(noaa_station,product,start_date,end_date,*a,**k):
 ##
 
 f = open(metpath + met, "w")
-f.write("\\begin{center} \n")
-f.write("\\begin{adjustbox}{width=1\\textwidth} \n")
-f.write("\\begin{tabular}{| l | r | r | r | r | r | r |} \n")
-f.write("\\hline \n")
-f.write("Name             & Skill   &  Bias (m) & \(r^2\) & RMSE (m) & Lag (min) & Amp. factor\\\ \\hline \n")
+# formatting of the table is included but commented out so that minor tweaks
+# can be made in the final tex document
+f.write("% \\begin{center} \n")
+f.write("% \\begin{adjustbox}{width=1\\textwidth} \n")
+f.write("% \\begin{tabular}{| l | r | r | r | r | r | r |} \n")
+f.write("% \\hline \n")
+f.write("% Name             & Skill   &  Bias (m) & \(r^2\) & RMSE (m) & Lag (min) & Amp. factor\\\ \\hline \n")
 
 def plot_noaa_comparison(noaa_station,title,base_name,datum=''):
         dat =  noaa_cached(noaa_station=noaa_station, product="water_level",
@@ -87,7 +92,7 @@ def plot_noaa_comparison(noaa_station,title,base_name,datum=''):
         time = dat["time"]
         # faster date conversion:
         times=utils.to_dnum(dat.time.values)
-        waterlevel = dat["water_level"][0,:]
+        waterlevel = dat["water_level"].isel(station=0)
 
         dist = np.sqrt((mll[0,:]-lon)**2 +  (mll[1,:]-lat)**2)
         rec = np.argmin(dist) # np.where(dist == np.min(dist))[0]
@@ -123,12 +128,13 @@ def plot_noaa_comparison(noaa_station,title,base_name,datum=''):
                                                                                                    ms, bias, r2, rms,
                                                                                                    24*60*lag2,
                                                                                                    amp))
-        
         # plotting
         fig, ax = plt.subplots(figsize=(6,4))
-        ax.plot(time, waterlevel, color='cornflowerblue',lw=1.5)
+        ax.plot(utils.to_dnum(time), waterlevel, color='cornflowerblue',lw=1.5)
         # Not as pretty, but maybe more legible
         ax.plot(mtime, mwaterlevel, color='k',lw=0.8) # color='turquoise', alpha=0.75)
+        ax.xaxis.axis_date()
+        
         ax.set_title("%s (%s)"%(title,noaa_station))
         ax.legend(["Observed","Model"], loc='best')
         if datum=='relative':
@@ -142,6 +148,7 @@ def plot_noaa_comparison(noaa_station,title,base_name,datum=''):
         fig.savefig(savepath + "%s.png"%base_name)
         fig.savefig(savepath + "%s.pdf"%base_name)
 
+        
 plot_noaa_comparison(noaa_station="9414290",
                      title="San Francisco",
                      base_name="SanFrancisco",
@@ -172,59 +179,11 @@ plot_noaa_comparison(noaa_station="9415144",
                      base_name="PortChicago",
                      datum="NAVD88")
 
-
-
-# f.write("\\hline \n") # repeats
-f.write("\\end{tabular} \n")
-f.write("\\end{adjustbox} \n")
-f.write("\\end{center} \n")
+f.write("% \\end{tabular} \n")
+f.write("% \\end{adjustbox} \n")
+f.write("% \\end{center} \n")
 f.close()
 f=None
 
 plt.close('all')
-
-#fig, ax = plt.subplots(nrows=4, sharex=True, figsize=(10,10))
-#ax[0].plot(time_1, zeta_1-np.mean(zeta_1), color='cornflowerblue')
-#ax[0].plot(t_1, waterlevel_1, color='turquoise', alpha=0.75)
-#ax[0].plot(time_1, waterlevel_i_1 - (zeta_1-np.mean(zeta_1)), color='lightcoral')
-#ax[0].set_title("9414290")
-#ax[0].legend(["obs","model", "model-obs"], loc='best')
-
-#ax[1].plot(time_2, zeta_2-np.mean(zeta_2), color='cornflowerblue')
-#ax[1].plot(t_2, waterlevel_2, color='turquoise', alpha=0.75)
-#ax[1].plot(time_2, waterlevel_i_2 - (zeta_2-np.mean(zeta_2)), color='lightcoral')
-#ax[1].set_title("9415020")
-
-#ax[2].plot(time_3, zeta_3-np.mean(zeta_3), color='cornflowerblue')
-#ax[2].plot(t_3, waterlevel_3, color='turquoise', alpha=0.75)
-#ax[2].plot(time_3, waterlevel_i_3 - (zeta_3-np.mean(zeta_3)), color='lightcoral')
-#ax[2].set_title("9414863")
-
-#ax[3].plot(time_4, zeta_4-np.mean(zeta_4), color='cornflowerblue')
-#ax[3].plot(t_4, waterlevel_4, color='turquoise', alpha=0.75)
-#ax[3].plot(time_4, waterlevel_i_4 - (zeta_4-np.mean(zeta_4)), color='lightcoral')
-#ax[3].set_title("9414750")
-#fig.savefig(savepath + "waterlevel_timeseries.png")
-
-#fig, ax = plt.subplots(nrows=4, sharex=True, figsize=(10,10))
-#ax[0].loglog(ofreq_1, ospec_1, color='cornflowerblue')
-#ax[0].loglog(mfreq_1, mspec_1, color='turquoise')
-#ax[0].legend(["obs","model"], loc='best')
-#ax[0].set_title("9414290")
-
-#ax[1].loglog(ofreq_2, ospec_2, color='cornflowerblue')
-#ax[1].loglog(mfreq_2, mspec_2, color='turquoise')
-#ax[1].set_ylabel("spectral energy [$m^2 / cph$]")
-#ax[1].set_title("9415020")
-
-#ax[2].loglog(ofreq_3, ospec_3, color='cornflowerblue')
-#ax[2].loglog(mfreq_3, mspec_3, color='turquoise')
-#ax[2].set_title("9414863")
-
-#ax[3].loglog(ofreq_4, ospec_4, color='cornflowerblue')
-#ax[3].loglog(mfreq_4, mspec_4, color='turquoise')
-#ax[3].set_xlabel("frequency [$cph$]")
-#ax[3].set_title("9414750")
-#ax[3].set_xlim((10**-4, 0.5))
-#fig.savefig(savepath + "waterlevel_spectra.png")
 

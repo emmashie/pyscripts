@@ -12,12 +12,34 @@ from stompy.plot import plot_utils
 import stompy.plot.cmap as scmap
 from stompy.io.local import usgs_sfbay
 from stompy.spatial import proj_utils
+import stompy.model.delft.io as dio
 
 ll_to_utm = proj_utils.mapper('WGS84','EPSG:26910')
 utm_to_ll = proj_utils.mapper('EPSG:26910','WGS84')
 
+
+##
+
+# Set the model location
+run_name="wy2013c"
+path = "/opt/data/delft/sfb_dfm_v2/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
+hisfile = "%s_0000_20120801_000000_his.nc"%run_name
+mdu=dio.MDUFile(os.path.join(path,'../%s.mdu'%run_name))
+cache_dir=os.path.join(path,"validation_metrics/cache")
+os.path.exists(cache_dir) or os.makedirs(cache_dir)
+
 ### Load in USGS cruise data, define variables, and convert datetime64 times to timestamps
-ds=usgs_sfbay.cruise_dataset(np.datetime64('2012-08-01'), np.datetime64('2013-10-01'))
+
+usgs_cache_fn=os.path.join(cache_dir,'usgs_cruises.nc')
+if not os.path.exists(usgs_cache_fn):
+    ds=usgs_sfbay.cruise_dataset(np.datetime64('2012-08-01'), np.datetime64('2013-10-01'))
+    ds.to_netcdf(usgs_cache_fn)
+    ds.close()
+# clean read:
+ds=xr.open_dataset(usgs_cache_fn)
+
+## 
+
 lat = np.asarray(ds["latitude"])
 lon = np.asarray(ds["longitude"])
 salt = np.asarray(ds["salinity"])
@@ -25,7 +47,9 @@ temp = np.asarray(ds["temperature"])
 depth = np.asarray(ds["depth"])
 dist = np.asarray(ds["Distance_from_station_36"])
 time = np.asarray(ds["time"])
-times = (time - np.datetime64('1969-12-31T17:00:00Z')) / np.timedelta64(1, 's')
+# These times already come in as UTC. the date math below does everything in
+# PST, so take the 8 hours back in 
+times = -8*3600 + (time - np.datetime64('1970-01-01T00:00:00')) / np.timedelta64(1, 's')
 
 ### fix nans in time record and fill in with valid times
 tvalid = utils.fill_invalid(times, axis=-1)
@@ -34,17 +58,18 @@ tvalid = utils.fill_invalid(tvalid, axis=0)
 times = tvalid
 
 ### Load in his files, define variables, adjust times to same reference time as USGS data
-path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013b/DFM_OUTPUT_wy2013b/"
-hisfile = "wy2013b_0000_20120801_000000_his.nc"
-#his = nc.MFDataset("/home/emma/sfb_dfm_setup/r14/DFM_OUTPUT_r14/his_files/r14_0000*.nc")
 
 temp = False
 
 his = nc.MFDataset(path + hisfile)
 xcoor = his.variables["station_x_coordinate"][:]
 ycoor = his.variables["station_y_coordinate"][:]
-dref = 15553*24*60*60
-dtz = 7*60*60
+
+# get reference time from the mdu:
+t_ref,t_start,t_stop=mdu.time_range()
+dref=utils.to_unix(t_ref) # dt.datetime.strptime(emdu['time','refdate']
+
+dtz = -8*60*60 # adjust UTC to PST
 mtimes = his.variables["time"][:]+dref+dtz
 msalt = his.variables["salinity"][:]
 if temp == True:
@@ -58,12 +83,12 @@ if xcoor.ndim==2:
     
 mll = utm_to_ll(np.c_[xcoor, ycoor]).T
 
-llind = np.zeros(len(ds["latitude"]))
+llind = np.zeros(len(ds["latitude"]),np.int32)
 for i in range(len(llind)):
     dist_ = np.sqrt((mll[0,:]-lon[i])**2 +  (mll[1,:]-lat[i])**2)
     llind[i] = np.argmin(dist_) # np.where(dist_ == np.min(dist_))[0]
 
-tind = np.zeros(times[:,:,0].shape)
+tind = np.zeros(times[:,:,0].shape,np.int32)
 for i in range(tind.shape[0]): # loop over cruises
     for j in range(tind.shape[1]): # loop over stations within cruise
         ind=utils.nearest(mtimes, times[i,j,0]) # match on time at top of cast
@@ -103,31 +128,17 @@ mdist_ = np.zeros((len(dist), len(mdepth_[0,0,:])))
 for i in range(len(mdepth_[0,0,:])):
     mdist_[:,i] = dist[:]
 
-if temp == True:
-    # mdat = xr.Dataset({'salinity': (['Distance_from_station_36', 'prof_sample'], msalt_[0,:,:]),
-    #                'temperature': (['Distance_from_station_36', 'prof_sample'], mtemp_[0,:,:])}, 
-    #              coords={'Distance_from_station_36': (['Distance_from_station_36'], dist), 
-    #                      'prof_sample': (['prof_sample'], np.arange(10)),
-    #                      'depth': (['Distance_from_station_36', 'prof_sample'], mdepth_[0,:,:])})                         
-    mdat = xr.Dataset({'salinity': (['date', 'Distance_from_station_36', 'prof_sample'], msalt_),
-                   'temperature': (['date', 'Distance_from_station_36', 'prof_sample'], mtemp_)}, 
-                 coords={'date': (['date'], np.arange(len(tind))),
-                         'Distance_from_station_36': (['Distance_from_station_36'], dist), 
-                         'prof_sample': (['prof_sample'], np.arange(10)),
-                         'depth': (['date', 'Distance_from_station_36', 'prof_sample'], mdepth_),
-                         'times': (['date', 'Distance_from_station_36', 'prof_sample'], mdates)})
-if temp == False:
-    #mdat = xr.Dataset({'salinity': (['Distance_from_station_36', 'prof_sample'], msalt_[0,:,:])},
-    #             coords={'Distance_from_station_36': (['Distance_from_station_36'], dist), 
-    #                     'prof_sample': (['prof_sample'], np.arange(10)),
-    #                     'depth': (['Distance_from_station_36', 'prof_sample'], mdepth_[0,:,:])})                         
-    mdat = xr.Dataset({'salinity': (['date', 'Distance_from_station_36', 'prof_sample'], msalt_)},
-                 coords={'date': (['date'], np.arange(len(tind))),
-                         'Distance_from_station_36': (['Distance_from_station_36'], dist), 
-                         'prof_sample': (['prof_sample'], np.arange(10)),
-                         'depth': (['date', 'Distance_from_station_36', 'prof_sample'], mdepth_),
-                         'times': (['date', 'Distance_from_station_36', 'prof_sample'], mdates)})
 
+coords={'date': (['date'], np.arange(len(tind))),
+        'Distance_from_station_36': (['Distance_from_station_36'], dist), 
+        'prof_sample': (['prof_sample'], np.arange(10)),
+        'depth': (['date', 'Distance_from_station_36', 'prof_sample'], mdepth_),
+        'times': (['date', 'Distance_from_station_36', 'prof_sample'], mdates)}
+mdat = xr.Dataset({'salinity': (['date', 'Distance_from_station_36', 'prof_sample'], msalt_)},
+                      coords=coords)
+if temp:
+    mdat['temperature'] = ('date', 'Distance_from_station_36', 'prof_sample'), mtemp_
+    
 if 1: # Take out the freesurface droop, which is a kind of distracting
     # Freesurface droop is at least from the tidal variations in freesurface
     # over the cruise, and probably also includes some sigma-coordinate confusion.
@@ -149,7 +160,12 @@ if not os.path.exists(figpath):
     os.makedirs(figpath)
 
 ##
-# salt_cmap=scmap.load_gradient('StepSeq25.cpt')
+
+# occasionally there is a just a single profile sample in a cast
+# this disrupts the contour plots.  Set this to 2 or more to
+# drop those profiles
+min_samples_per_profile=2
+
 salt_cmap=cmo.matter_r
 
 salt_contours=np.arange(5,35,5)
@@ -157,7 +173,13 @@ salt_contours=np.arange(5,35,5)
 # avg times for plotting and figure names
 t = np.nanmean(np.nanmean(times,axis=-1),axis=-1)
 for d in range(len(tind[:,0])):
-    cruise_label=dt.datetime.fromtimestamp(t[d]).strftime('%Y-%m-%d')    
+    # counter-intuitive - but because above we already took 8 hours off
+    # to put t[:] into PST, here we tell python it's UTC, so that python
+    # doesn't try to further correct for timezones.  utcfromtimestamp doesn't
+    # set a time zone on the return value, and doesn't try to make any
+    # time zone adjustments
+    cruise_start=dt.datetime.utcfromtimestamp(t[d])
+    cruise_label=cruise_start.strftime('%Y-%m-%d')    
 
     if np.all(tind[d,:]<0):
         print("Cruise %s is not covered by model run"%cruise_label)
@@ -170,12 +192,18 @@ for d in range(len(tind[:,0])):
     cruise=ds.isel(date=d) # choose a single cruise
     field='salinity'
     field_label='Salinity [ppt]'
-    obs=plot_utils.transect_tricontourf(cruise[field],ax=ax[0],V=np.linspace(0,35,36),
+
+    bad_profiles = np.isfinite(cruise.salinity.values).sum(axis=1) < min_samples_per_profile
+    cleaned=cruise[field].copy()
+    # Just set the whole column to nan, and it will get dropped from the contour plots.
+    cleaned.loc[dict(Distance_from_station_36=bad_profiles)] = np.nan
+    
+    obs=plot_utils.transect_tricontourf(cleaned,ax=ax[0],V=np.linspace(0,35,36),
                                         cmap=salt_cmap,
                                         xcoord='Distance_from_station_36',
                                         ycoord='depth',
                                         extend='max')
-    obsl=plot_utils.transect_tricontour(cruise[field],ax=ax[0],V=salt_contours,
+    obsl=plot_utils.transect_tricontour(cleaned,ax=ax[0],V=salt_contours,
                                         colors='k',linewidths=0.8,alpha=0.5,
                                         xcoord='Distance_from_station_36',
                                         ycoord='depth')
@@ -209,7 +237,7 @@ for d in range(len(tind[:,0])):
     mstrat=np.nanmax(mdat_cruise[field],axis=-1) - np.nanmin(mdat_cruise[field],axis=-1)
     ostrat=np.nanmax(cruise[field].values,axis=-1) - np.nanmin(cruise[field].values,axis=-1)
 
-    if 1: # get a real ds/dz
+    if 1: # get a "real" ds/dz
         mdz=np.nanmax(mdat_cruise['depth'],axis=-1) - np.nanmin(mdat_cruise['depth'],axis=-1)
         mstrat=mstrat/mdz
         
@@ -237,8 +265,11 @@ for d in range(len(tind[:,0])):
     ax[0].axis(ymin=min(xxyy0[2],xxyy1[2]),
                ymax=max(xxyy0[3],xxyy1[3]))
     ax[2].set_xticklabels(st_names[::3], rotation=45,ha='right')
-    
-    fig.savefig(figpath + "cruise_" + dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d') + "_salt.png")
+
+    ax[0].text(0.02,0.05,"Observed",transform=ax[0].transAxes,fontsize=12)
+    ax[1].text(0.02,0.05,"Model",transform=ax[1].transAxes,fontsize=12)
+
+    fig.savefig(figpath + "cruise_" + cruise_start.strftime('%Y%m%d') + "_salt.png")
     
     if temp == True:
         fig,ax=plt.subplots(nrows=3, figsize=(8.5,7), sharex=True)
@@ -253,7 +284,7 @@ for d in range(len(tind[:,0])):
         ax[0].set_ylabel('Depth (m)')
         #cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
         cbar0 = plt.colorbar(obs,label=field, cax=plt.gcf().add_axes((0.93,0.645,0.01,0.24)))
-        ax[0].set_title('cruise# %s' % dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d'))
+        ax[0].set_title('cruise# %s' % cruise_start.strftime('%Y-%m-%d'))
         ax[1].axis('tight')
         mod=plot_utils.transect_tricontourf(mdat.isel(date=d)[field],ax=ax[1],V=np.linspace(14,25,36),
                                      cmap='viridis',
@@ -275,6 +306,9 @@ for d in range(len(tind[:,0])):
         ax[2].legend(lns, labels, loc='best', prop={'size': 9})
         ax[2].set_xticks(cruise["Distance_from_station_36"].values[::3])
         ax[2].set_xticklabels(st_names[::3], rotation=45)
-        fig.savefig(figpath + "cruise_" + dt.datetime.fromtimestamp(t[d]).strftime('%Y%m%d') + "_temp.png")
-
+        fig.savefig(figpath + "cruise_" + cruise_start.strftime('%Y%m%d') + "_temp.png")
     plt.close('all')
+
+
+##
+

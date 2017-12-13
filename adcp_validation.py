@@ -38,8 +38,11 @@ adcp_files =south_adcps+central_adcps+coastal_adcps+north_adcps
 # output_path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013a/DFM_OUTPUT_wy2013a/"    
 # model_files = output_path + "wy2013a_0000_20120801_000000_his.nc"
 # 2017-11-27: plotting new run with improved (?) Delta flows
-output_path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013b/DFM_OUTPUT_wy2013b/"
-model_files = output_path + "wy2013b_0000_20120801_000000_his.nc"
+# output_path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013b/DFM_OUTPUT_wy2013b/"
+# model_files = output_path + "wy2013b_0000_20120801_000000_his.nc"
+run_name="wy2013c"
+output_path = "/opt/data/delft/sfb_dfm_v2/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
+model_files = output_path + "%s_0000_20120801_000000_his.nc"%run_name
 
 mdat = nc.MFDataset(model_files)
 
@@ -74,7 +77,9 @@ mtimes = date2num(mdtime)
 
 ##
 
-save_metrics=True 
+save_metrics=True
+rotate_metrics=True # evaluate metrics on the principal and secondary velocities
+rotate_series=True # time series show rotated velocities
 
 met_path=os.path.join(output_path,"validation_metrics")
 if not os.path.exists(met_path):
@@ -91,7 +96,7 @@ for region_name,region_adcps in [ ('south',south_adcps),
         # write header lines
         metrics_fp.write("\\begin{center} \n")
         metrics_fp.write("\\begin{adjustbox}{width=1\\textwidth} \n")
-        metrics_fp.write("\\begin{tabular}{| l | r | r | r | r | r | r | r | r | r | r |} \n")
+        metrics_fp.write("\\begin{tabular}{| l | r | r | r | r | r | r | r | r | r | r | r | r |} \n")
         metrics_fp.write("\\hline \n")
 
         if 1: # split header to two rows:
@@ -99,12 +104,21 @@ for region_name,region_adcps in [ ('south',south_adcps),
                               '& \multicolumn{2}{|l|}{Bias ($m\ s^{-1}$)} '
                               '& \multicolumn{2}{|l|}{\(r^2\)} '
                               '& \multicolumn{2}{|l|}{RMSE ($m\ s^{-1}$)} '
-                              '& \multicolumn{2}{|l|}{Lag (min)} \\\ \hline \n')
-            metrics_fp.write('Name    & East & North                '
-                             '& East & North'
-                             '& East & North'
-                             '& East & North'
-                             '& East &  North \\\ \hline\n')
+                              '& \multicolumn{2}{|l|}{Lag (min)} '
+                              '& \multicolumn{2}{|l|}{Amp. factor} \\\ \hline \n')
+            if not rotate_metrics:
+                metrics_fp.write('Name    & East & North                '
+                                 '& East & North'
+                                 '& East & North'
+                                 '& East & North'
+                                 '& East &  North \\\ \hline\n')
+            else:                
+                metrics_fp.write('Name   & Pri. & Sec.                '
+                                 '& Pri. & Sec. '
+                                 '& Pri. & Sec. '
+                                 '& Pri. & Sec. '
+                                 '& Pri. & Sec. '
+                                 '& Pri. & Sec. \\\ \hline\n')
         else:
             metrics_fp.write( ("Name    & Skill (East) & Skill (North) "
                            "& Bias, East ($m s^{-1}$) & Bias, North ($m s^{-1}$) "
@@ -188,16 +202,32 @@ for region_name,region_adcps in [ ('south',south_adcps),
 
         if 1: # plotting up model & observation time series
             fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(8,7))
-            ax[0].plot(mdtime[:], mubar[:,llind], color=mod_color, label='Model')
-            ax[0].plot(dtime[:], ubar[:], '--', color=obs_color, label='ADCP')
+            if not rotate_series:
+                ax[0].plot(mdtime[:], mubar[:,llind], color=mod_color, label='Model')
+                ax[0].plot(dtime[:], ubar[:], '--', color=obs_color, label='ADCP')
+                
+                ax[1].plot(mdtime[:], mvbar[:,llind], color=mod_color)
+                ax[1].plot(dtime[:], vbar[:], '--', color=obs_color)
+                
+                ax[0].set_ylabel("Eastward Velocity [m/s]")
+                ax[1].set_ylabel("Northward Velocity [m/s]")
+            else:
+                rot_muvbar=rot(-mtheta,
+                               np.array([mubar[:,llind],
+                                         mvbar[:,llind]]).T )
+                ax[0].plot(mdtime[:], rot_muvbar[:,0], color=mod_color, label='Model')
+                ax[0].plot(dtime[:], uvbar[0,:], '--', color=obs_color, label='ADCP')
+
+                ax[1].plot(mdtime[:], rot_muvbar[:,1], color=mod_color)
+                ax[1].plot(dtime[:], uvbar[1,:], '--', color=obs_color)
+                
+                ax[0].set_ylabel("Principal Velocity [m/s]")
+                ax[1].set_ylabel("Secondary Velocity [m/s]")
             
             ax[0].legend(loc='upper right') # specify for consistency
             ax[0].set_title(dir[:-5])
-            ax[0].set_ylabel("Eastward Velocity [m/s]")
-            ax[1].plot(mdtime[:], mvbar[:,llind], color=mod_color)
-            ax[1].plot(dtime[:], vbar[:], '--', color=obs_color)
+
             ax[1].set_xlim((tmin, tmin+dt.timedelta(days=7)))
-            ax[1].set_ylabel("Northward Velocity [m/s]")
             fig.autofmt_xdate(rotation=45)
             fig.savefig(ts + "/" + adcp_file[:-3] + "_time_series.png")
             fig.savefig(ts + "/" + adcp_file[:-3] + "_time_series.pdf", format='pdf')
@@ -293,15 +323,26 @@ for region_name,region_adcps in [ ('south',south_adcps),
 
         if save_metrics:
             sel=(time >= tmin.timestamp()) & (time <= tmax.timestamp())
-            msu, biasu, r2u, rmsu, lagu, ampu = an.model_metrics(dtimes[sel],mubar_i[sel],
-                                                                 dtimes[sel],ubar[sel])
-            msv, biasv, r2v, rmsv, lagv, ampv = an.model_metrics(dtimes[sel], mvbar_i[sel],
-                                                                 dtimes[sel], vbar[sel])
-
+            if not rotate_metrics:
+                model_u=mubar_i
+                model_v=mvbar_i
+                obs_u=ubar
+                obs_v=vbar
+            else:
+                model_u=muvbar[0,:]
+                model_v=muvbar[1,:]
+                obs_u=uvbar[0,:]
+                obs_v=uvbar[1,:]
+                                
+            msu, biasu, r2u, rmsu, lagu, ampu = an.model_metrics(dtimes[sel],model_u[sel],
+                                                                 dtimes[sel],obs_u[sel])
+            msv, biasv, r2v, rmsv, lagv, ampv = an.model_metrics(dtimes[sel], model_v[sel],
+                                                                 dtimes[sel], obs_v[sel])
+                
             metrics_fp.write( ("%s & %6.3f & %6.3f & %6.3f & %6.3f & %6.3f & %6.3f "
-                               "& %6.3f & %6.3f & %5.2f & %5.2f \\\ \\hline \n") %
+                               "& %6.3f & %6.3f & %5.2f & %5.1f & %5.2f & %5.2f \\\ \\hline \n") %
                               (dir[:-5], msu, msv, biasu, biasv, r2u, r2v, rmsu, rmsv,
-                               24*60*lagu, 24*60*lagv))
+                               24*60*lagu, 24*60*lagv, ampu, ampv))
                           
     if save_metrics:
         metrics_fp.write("\\end{tabular} \n")
