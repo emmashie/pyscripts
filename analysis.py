@@ -44,10 +44,19 @@ def model_metrics(tmod, mod, tobs, obs):
     """ calculate model metrics
         mod and obs must be at same time and equivalent length
     """
-    ms = model_skill(mod, obs)
-    bias = np.mean(mod-obs)
-    r2 = np.corrcoef(mod, obs)[0,1]**2
-    rms_rat = rms(mod-obs)
+    valid=np.isfinite(mod+obs)
+    mod_val=mod[valid]
+    obs_val=obs[valid]
+    ms = model_skill(mod_val, obs_val)
+    bias = np.mean(mod_val-obs_val)
+    r2 = np.corrcoef(mod_val, obs_val)[0,1]**2
+    rms_err = rms(mod_val-obs_val)
     lag = find_lag(tmod, mod, tobs, obs)
-    return ms, bias, r2, rms_rat, lag
+    # ignoring biases, how closer are we on amplitude?  
+    # mb=np.polyfit(mod_val,obs_val,1)
+    # amp_factor=mb[0]
+    # This way further ignores phase error
+    amp_factor=rms(mod_val - mod_val.mean()) / rms(obs_val - obs_val.mean())
+    
+    return ms, bias, r2, rms_err, lag, amp_factor
 
