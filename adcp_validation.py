@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 from stompy.utils import model_skill
 from stompy.utils import rotate_to_principal,principal_theta, rot
-import analysis as an
+from pyscripts import analysis as an
 from stompy.spatial import proj_utils
 import os
 
@@ -40,8 +40,8 @@ adcp_files =south_adcps+central_adcps+coastal_adcps+north_adcps
 # 2017-11-27: plotting new run with improved (?) Delta flows
 # output_path = "/opt/data/delft/sfb_dfm_v2/runs/wy2013b/DFM_OUTPUT_wy2013b/"
 # model_files = output_path + "wy2013b_0000_20120801_000000_his.nc"
-run_name="wy2013c"
-output_path = "/opt/data/delft/sfb_dfm_v2/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
+run_name="wy2013_temp"
+output_path = "/hpcvol1/emma/sfb_dfm/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
 model_files = output_path + "%s_0000_20120801_000000_his.nc"%run_name
 
 mdat = nc.MFDataset(model_files)

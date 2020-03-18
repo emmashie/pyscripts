@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import waterlevel_validation as wv
+from pyscripts import waterlevel_validation as wv
 from matplotlib.dates import num2date, date2num
-import analysis as an
+from pyscripts import analysis as an
 import datetime as dt
 from stompy.spatial import proj_utils
 import os
@@ -18,15 +18,18 @@ from stompy import utils
 
 # RH 2017-11-27: update to run with "better" Delta flows
 # RH 2017-12-04: update to attenuated tides and possible evaporation
-base_path="/opt/data/delft/sfb_dfm_v2/runs/"
-run_name="wy2013c"
-path = "/opt/data/delft/sfb_dfm_v2/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
-hisfile = path + "%s_0000_20120801_000000_his.nc"%run_name
+run_name="wy2014"
+path = "/hpcvol1/emma/sfb_dfm/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
+hisfile = path + "%s_0000_20130801_000000_his.nc"%run_name
 
 
 savepath = path + "/validation_plots/waterlevel_validation_plots/"
 metpath = path + "validation_metrics/"
 met = "waterlevel_metrics"
+
+start_date=np.datetime64("2013-08-01")
+end_date=np.datetime64('2014-04-01')
+ref_year = 2013
 
 if not os.path.exists(savepath):
 	os.makedirs(savepath)
@@ -82,13 +85,14 @@ f.write("% \\begin{tabular}{| l | r | r | r | r | r | r |} \n")
 f.write("% \\hline \n")
 f.write("% Name             & Skill   &  Bias (m) & \(r^2\) & RMSE (m) & Lag (min) & Amp. factor\\\ \\hline \n")
 
-def plot_noaa_comparison(noaa_station,title,base_name,datum=''):
+def plot_noaa_comparison(noaa_station,title,base_name,datum='',start_date=np.datetime64("2016-08-01"),end_date=np.datetime64("2017-09-01")):
         dat =  noaa_cached(noaa_station=noaa_station, product="water_level",
-                           start_date=np.datetime64("2012-08-01"),
-                           end_date=np.datetime64("2013-09-01"),
-                           days_per_request=31)
-        lon = dat["lon"].values[0,0]
-        lat = dat["lat"].values[0,0]
+                           start_date=start_date,
+                           end_date=end_date,
+                           days_per_request=31,
+                           ref_year=ref_year)
+        lon = dat["lon"].values[0]
+        lat = dat["lat"].values[0]
         time = dat["time"]
         # faster date conversion:
         times=utils.to_dnum(dat.time.values)
@@ -96,7 +100,7 @@ def plot_noaa_comparison(noaa_station,title,base_name,datum=''):
 
         dist = np.sqrt((mll[0,:]-lon)**2 +  (mll[1,:]-lat)**2)
         rec = np.argmin(dist) # np.where(dist == np.min(dist))[0]
-        mtime, mwaterlevel = wv.load_model(hisfile, rec=rec)
+        mtime, mwaterlevel = wv.load_model(hisfile, ref_year=ref_year, rec=rec)
         mtimes = date2num(mtime)
 
         # Adjust to relative at this point so that model skill doesn't
@@ -142,7 +146,7 @@ def plot_noaa_comparison(noaa_station,title,base_name,datum=''):
         else:
                 ax.set_ylabel("Water level (m %s)"%datum)
                 
-        ax.set_xlim([dt.date(2012,10,1), dt.date(2012,10,7)])
+        ax.set_xlim([start_date+np.timedelta64(30*2,'D'), start_date+np.timedelta64(30*2,'D')+np.timedelta64(7,'D')])
         fig.subplots_adjust(left=0.17) # text was a bit cramped.
         fig.autofmt_xdate()
         fig.savefig(savepath + "%s.png"%base_name)
@@ -152,32 +156,44 @@ def plot_noaa_comparison(noaa_station,title,base_name,datum=''):
 plot_noaa_comparison(noaa_station="9414290",
                      title="San Francisco",
                      base_name="SanFrancisco",
-                     datum='NAVD88')
+                     datum='NAVD88',
+                     start_date=start_date,
+                     end_date=end_date)
 
 plot_noaa_comparison(noaa_station="9415020",
                      title="Point Reyes",
                      base_name="PointReyes",
-                     datum='NAVD88')
+                     datum='NAVD88',                     
+                     start_date=start_date,
+                     end_date=end_date)
 
 plot_noaa_comparison(noaa_station="9414863",
                      title="Richmond",
                      base_name="Richmond",
-                     datum='relative')
+                     datum='relative',
+                     start_date=start_date,
+                     end_date=end_date)
 
 plot_noaa_comparison(noaa_station="9414750",
                      title="Alameda",
                      base_name="Alameda",
-                     datum="NAVD88")
+                     datum="NAVD88",
+                     start_date=start_date,
+                     end_date=end_date)
 
 plot_noaa_comparison(noaa_station="9414523",
                      title="Redwood City",
                      base_name="RedwoodCity",
-                     datum="relative")
+                     datum="relative",                     
+                     start_date=start_date,
+                     end_date=end_date)
 
 plot_noaa_comparison(noaa_station="9415144",
                      title="Port Chicago",
                      base_name="PortChicago",
-                     datum="NAVD88")
+                     datum="NAVD88",                     
+                     start_date=start_date,
+                     end_date=end_date)
 
 f.write("% \\end{tabular} \n")
 f.write("% \\end{adjustbox} \n")

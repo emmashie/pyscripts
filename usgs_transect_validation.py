@@ -21,18 +21,20 @@ utm_to_ll = proj_utils.mapper('EPSG:26910','WGS84')
 ##
 
 # Set the model location
-run_name="wy2013c"
-path = "/opt/data/delft/sfb_dfm_v2/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
-hisfile = "%s_0000_20120801_000000_his.nc"%run_name
+run_name="wy2003"
+path = "/hpcvol1/emma/sfb_dfm/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
+hisfile = "%s_0000_20020801_000000_his.nc"%run_name
 mdu=dio.MDUFile(os.path.join(path,'../%s.mdu'%run_name))
 cache_dir=os.path.join(path,"validation_metrics/cache")
 os.path.exists(cache_dir) or os.makedirs(cache_dir)
 
 ### Load in USGS cruise data, define variables, and convert datetime64 times to timestamps
+start_date=np.datetime64("2002-08-01")
+end_date=np.datetime64('2003-04-01')
 
 usgs_cache_fn=os.path.join(cache_dir,'usgs_cruises.nc')
 if not os.path.exists(usgs_cache_fn):
-    ds=usgs_sfbay.cruise_dataset(np.datetime64('2012-08-01'), np.datetime64('2013-10-01'))
+    ds=usgs_sfbay.cruise_dataset(start_date, end_date)
     ds.to_netcdf(usgs_cache_fn)
     ds.close()
 # clean read:
@@ -59,7 +61,7 @@ times = tvalid
 
 ### Load in his files, define variables, adjust times to same reference time as USGS data
 
-temp = False
+temp = True
 
 his = nc.MFDataset(path + hisfile)
 xcoor = his.variables["station_x_coordinate"][:]
@@ -268,44 +270,44 @@ for d in range(len(tind[:,0])):
 
     ax[0].text(0.02,0.05,"Observed",transform=ax[0].transAxes,fontsize=12)
     ax[1].text(0.02,0.05,"Model",transform=ax[1].transAxes,fontsize=12)
-
     fig.savefig(figpath + "cruise_" + cruise_start.strftime('%Y%m%d') + "_salt.png")
     
     if temp == True:
-        fig,ax=plt.subplots(nrows=3, figsize=(8.5,7), sharex=True)
+        fig,ax=plt.subplots(nrows=2, figsize=(8.5,5.5), sharex=True)
         ax[0].axis('tight')
         cruise=ds.isel(date=d) # choose a single cruise
         field='temperature'
-        obs=plot_utils.transect_tricontourf(cruise[field],ax=ax[0],V=np.linspace(14,25,36),
+        obs=plot_utils.transect_tricontourf(cruise[field],ax=ax[0],V=np.linspace(10,25,36),
                                      cmap='viridis',
                                      xcoord='Distance_from_station_36',
                                      ycoord='depth',
                                      extend='both')
         ax[0].set_ylabel('Depth (m)')
-        #cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
-        cbar0 = plt.colorbar(obs,label=field, cax=plt.gcf().add_axes((0.93,0.645,0.01,0.24)))
+        cbar0 = plt.colorbar(obs,label=field, ax=ax[0])
+        #cbar0 = plt.colorbar(obs,label=field, cax=plt.gcf().add_axes((0.93,0.645,0.01,0.24)))
         ax[0].set_title('cruise# %s' % cruise_start.strftime('%Y-%m-%d'))
         ax[1].axis('tight')
-        mod=plot_utils.transect_tricontourf(mdat.isel(date=d)[field],ax=ax[1],V=np.linspace(14,25,36),
+        mod=plot_utils.transect_tricontourf(mdat.isel(date=d)[field],ax=ax[1],V=np.linspace(10,25,36),
                                      cmap='viridis',
                                      xcoord='Distance_from_station_36',
                                      ycoord='depth',
                                      extend='both')
         ax[1].set_ylabel('Depth (m)')
-        #cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
-        cbar1 = plt.colorbar(mod,label=field, cax=plt.gcf().add_axes((0.93,0.375,0.01,0.24)))
-        ln1 = ax[2].plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.nanmean(mdat.isel(date=d)[field].values, axis=-1), 'o-', label="Model - Depth Avg", color="lightseagreen", markersize=4)
-        ln2 = ax[2].plot(cruise["Distance_from_station_36"].values, np.nanmean(cruise[field].values, axis=-1), '^--', label="Obs - Depth Avg", color="lightseagreen", markersize=4)
-        ax[2].tick_params('y', colors="lightseagreen")
-        ax2 = ax[2].twinx()
-        ln3 = ax2.plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.abs(np.nanmin(mdat.isel(date=d)[field],axis=-1)-np.nanmax(mdat.isel(date=d)["salinity"],axis=-1)), 'o-', label="Model - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
-        ln4 = ax2.plot(cruise["Distance_from_station_36"].values, np.abs(np.nanmin(cruise[field].values,axis=-1) - np.nanmax(cruise[field].values,axis=-1)), '^--', label="Obs - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
-        ax2.tick_params('y', colors="slateblue")
-        lns = ln1+ln2+ln3+ln4
-        labels = [l.get_label() for l in lns]
-        ax[2].legend(lns, labels, loc='best', prop={'size': 9})
-        ax[2].set_xticks(cruise["Distance_from_station_36"].values[::3])
-        ax[2].set_xticklabels(st_names[::3], rotation=45)
+        cbar1 = plt.colorbar(mod,label=field, ax=ax[1])
+        #cbar1 = plt.colorbar(mod,label=field, cax=plt.gcf().add_axes((0.93,0.375,0.01,0.24)))
+        #ln1 = ax[2].plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.nanmean(mdat.isel(date=d)[field].values, axis=-1), 'o-', label="Model - Depth Avg", color="lightseagreen", markersize=4)
+        #ln2 = ax[2].plot(cruise["Distance_from_station_36"].values, np.nanmean(cruise[field].values, axis=-1), '^--', label="Obs - Depth Avg", color="lightseagreen", markersize=4)
+        #ax[2].tick_params('y', colors="lightseagreen")
+        #ax2 = ax[2].twinx()
+        #ln3 = ax2.plot(mdat.isel(date=d)["Distance_from_station_36"].values, np.abs(np.nanmin(mdat.isel(date=d)[field],axis=-1)-np.nanmax(mdat.isel(date=d)["salinity"],axis=-1)), 'o-', label="Model - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
+        #ln4 = ax2.plot(cruise["Distance_from_station_36"].values, np.abs(np.nanmin(cruise[field].values,axis=-1) - np.nanmax(cruise[field].values,axis=-1)), '^--', label="Obs - Stratificaiton", color="slateblue", alpha=0.8, markersize=4)
+        #ax2.tick_params('y', colors="slateblue")
+        #lns = ln1+ln2+ln3+ln4
+        #labels = [l.get_label() for l in lns]
+        #ax[2].legend(lns, labels, loc='best', prop={'size': 9})
+        ax[1].set_xticks(cruise["Distance_from_station_36"].values[::3])
+        ax[1].set_xticklabels(st_names[::3], rotation=45)
+        fig.tight_layout()
         fig.savefig(figpath + "cruise_" + cruise_start.strftime('%Y%m%d') + "_temp.png")
     plt.close('all')
 

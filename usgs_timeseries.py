@@ -55,10 +55,10 @@ ll2utm=proj_utils.mapper('WGS84','EPSG:26910')
 
 ##
 
-base_path="/opt/data/delft/sfb_dfm_v2/runs/"
-run_name="wy2013c"
-path = "/opt/data/delft/sfb_dfm_v2/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
-hisfile = path + "%s_0000_20120801_000000_his.nc"%run_name
+run_name="wy2014"
+begindate = "20130801"
+path = "/hpcvol1/emma/sfb_dfm/runs/%s/DFM_OUTPUT_%s/"%(run_name,run_name)
+hisfile = os.path.join(path, "%s_0000_%s_000000_his.nc"%(run_name,begindate))
 mdufile = os.path.join(path,"..","%s.mdu"%run_name)
 mdu=dio.MDUFile(mdufile)
 t_ref,t_start,t_stop=mdu.time_range()
@@ -66,9 +66,11 @@ t_ref,t_start,t_stop=mdu.time_range()
 #t_spunup=np.datetime64("2012-10-01") # clip to "real" period
 t_spunup=t_start # show entire simulation
 
-savepath = os.path.join(path + "/validation_plots/salinity_time_series/")
-metric_fn  = os.path.join(path + "/validation_metrics/salinity_time_series.tex")
+savepath = os.path.join(path + "validation_plots/salinity_time_series/")
+metricpath = os.path.join(path + "validation_metrics/")
+metric_fn  = os.path.join(metricpath + "salinity_time_series.tex")
 os.path.exists(savepath) or os.makedirs(savepath)
+os.path.exists(metricpath) or os.makedirs(metricpath)
 
 ##
 station_locs={
@@ -89,7 +91,11 @@ station_locs={
     # Alviso Slough
     "11169750":dict(lon=-(121+59/60.+54/3600.),
                     lat=37+26/60.+24/3600.,
-                    elev_mab=[None])
+                    elev_mab=[None]), 
+    # Dumbarton Bridge
+    "373015122071000":dict(lon=-(122+7/60.+10/3600.), 
+                           lat=37+30/60.+7/3600.,
+                           elev_mab=[7.62, 1.22])
 }
 
 
@@ -173,6 +179,7 @@ def figure_usgs_salinity_time_series(station,station_name):
     dists= utils.dist( his_xy, [ds.x,ds.y] ) 
     station_idx=np.argmin(dists)
     print("Nearest model station is %.0f m away from observation"%(dists[station_idx]))
+    print(station_idx)
 
     def low_high(d,winsize):
         high=percentile_filter(d,95,winsize)
@@ -205,6 +212,10 @@ def figure_usgs_salinity_time_series(station,station_name):
 
 
     mod_deltaS=mod_salt_bed - mod_salt_surf
+
+    if 'salinity_01' in ds:
+        if ds.site_no == '375607122264701':
+            ds = ds.rename({"salinity": "salinity_01", "salinity_01": "salinity"})
 
     if 'salinity_01' in ds:
         obs_deltaS=ds.salinity_01.values - ds.salinity.values
@@ -315,6 +326,9 @@ figure_usgs_salinity_time_series(station="374938122251801",station_name="Alcatra
 figure_usgs_salinity_time_series(station="375607122264701",station_name="Richmond Bridge")
 
 figure_usgs_salinity_time_series(station="11169750",station_name="Alviso Slough")
+
+figure_usgs_salinity_time_series(station="373015122071000",station_name="Dumbarton Bridge")
+
 
 if tex_fp != sys.stdout:
     tex_fp.close()
